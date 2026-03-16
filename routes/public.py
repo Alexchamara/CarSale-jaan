@@ -7,17 +7,23 @@ public_bp = Blueprint('public', __name__)
 
 @public_bp.route('/')
 def index():
-    featured = Vehicle.query.filter_by(is_featured=True, is_archived=False, status='available').limit(8).all()
-    recent = Vehicle.query.filter_by(is_archived=False).filter(
+    featured_vehicles = Vehicle.query.filter_by(is_featured=True, is_archived=False).filter(
+        Vehicle.status != 'sold').order_by(Vehicle.updated_at.desc()).limit(8).all()
+    latest_vehicles = Vehicle.query.filter_by(is_archived=False).filter(
         Vehicle.status != 'sold').order_by(Vehicle.created_at.desc()).limit(6).all()
     makes = [m[0] for m in db.session.query(Vehicle.make).filter_by(is_archived=False).distinct().all() if m[0]]
+    body_types = [
+        'Sedan', 'SUV', 'Hatchback', 'Van', 'Pickup', 'Coupe', 'Wagon', 'Minivan'
+    ]
+    fuel_types = ['Petrol', 'Diesel', 'Hybrid', 'Electric']
     stats = {
         'total_vehicles': Vehicle.query.filter_by(is_archived=False).filter(Vehicle.status != 'sold').count(),
         'total_sold': Vehicle.query.filter_by(status='sold').count(),
         'happy_customers': Vehicle.query.filter_by(status='sold').count(),
     }
-    return render_template('public/index.html', featured=featured, recent=recent,
-                           makes=makes, stats=stats)
+    return render_template('public/index.html', featured_vehicles=featured_vehicles,
+                           latest_vehicles=latest_vehicles, makes=makes,
+                           body_types=body_types, fuel_types=fuel_types, stats=stats)
 
 
 @public_bp.route('/vehicles')
