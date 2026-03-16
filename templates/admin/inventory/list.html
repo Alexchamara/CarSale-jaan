@@ -25,19 +25,25 @@
         </select>
       </div>
       <div class="col-md-2">
-        <select class="form-select form-select-sm" name="make">
+        <select class="form-select form-select-sm" name="make_id" id="filter_make_id" data-model-url="{{ url_for('inventory.models_for_make', make_id=0) }}">
           <option value="">All Makes</option>
-          {% for m in makes %}<option value="{{ m }}" {% if request.args.get('make') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+          {% for mk in makes %}<option value="{{ mk.id }}" {% if filters.make_id == mk.id %}selected{% endif %}>{{ mk.name }}</option>{% endfor %}
         </select>
       </div>
       <div class="col-md-2">
-        <select class="form-select form-select-sm" name="body_type">
-          <option value="">All Types</option>
-          {% for bt in body_types %}<option value="{{ bt }}" {% if request.args.get('body_type') == bt %}selected{% endif %}>{{ bt }}</option>{% endfor %}
+        <select class="form-select form-select-sm" name="model_id" id="filter_model_id" data-placeholder="All Models">
+          <option value="">All Models</option>
+          {% for mdl in models %}<option value="{{ mdl.id }}" {% if filters.model_id == mdl.id %}selected{% endif %}>{{ mdl.name }}</option>{% endfor %}
         </select>
       </div>
       <div class="col-md-1">
-        <input type="number" class="form-control form-control-sm" name="year" placeholder="Year" value="{{ request.args.get('year','') }}">
+        <select class="form-select form-select-sm" name="body_type">
+          <option value="">All Types</option>
+          {% for bt in body_types %}<option value="{{ bt }}" {% if filters.body_type == bt %}selected{% endif %}>{{ bt }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-1">
+        <input type="number" class="form-control form-control-sm" name="year" placeholder="Year" value="{{ filters.year or '' }}">
       </div>
       <div class="col-md-2 d-flex gap-1">
         <button class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>

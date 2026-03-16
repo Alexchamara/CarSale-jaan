@@ -289,6 +289,80 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+/* ── Managed Make/Model dropdown linkage (supports multiple pairs) ── */
+document.addEventListener('DOMContentLoaded', () => {
+  const bindMakeModel = (makeSelect, modelSelect, makeInput, modelInput) => {
+    if (!makeSelect || !modelSelect) return;
+    const baseUrl = modelSelect.dataset.modelUrl || '';
+    const valueField = modelSelect.dataset.valueField === 'name' ? 'name' : 'id';
+
+    const applyModelOptions = (models, placeholder) => {
+      const current = modelSelect.value;
+      modelSelect.innerHTML = `<option value="">${placeholder}</option>`;
+      models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m[valueField];
+        opt.textContent = m.name;
+        opt.dataset.make = m.make_id || '';
+        modelSelect.appendChild(opt);
+      });
+      if (current) modelSelect.value = current;
+    };
+
+    const fetchModels = (makeId) => {
+      if (!makeId || !baseUrl) {
+        applyModelOptions([], modelSelect.dataset.placeholder || 'Select managed model…');
+        return;
+      }
+      const url = baseUrl.replace(/\d+$/, makeId);
+      fetch(url, { headers: { 'Accept': 'application/json' } })
+        .then(r => r.ok ? r.json() : [])
+        .then(data => applyModelOptions(data, modelSelect.dataset.placeholder || 'Select managed model…'))
+        .catch(() => applyModelOptions([], modelSelect.dataset.placeholder || 'Select managed model…'));
+    };
+
+    makeSelect.addEventListener('change', () => {
+      const sel = makeSelect.options[makeSelect.selectedIndex];
+      if (makeInput) makeInput.value = sel && sel.value ? sel.text.replace(' (disabled)', '') : '';
+      fetchModels(makeSelect.value);
+      if (modelInput) modelInput.value = '';
+    });
+
+    modelSelect.addEventListener('change', () => {
+      const sel = modelSelect.options[modelSelect.selectedIndex];
+      if (modelInput && sel && sel.value) modelInput.value = sel.text.replace(' (disabled)', '');
+    });
+
+    // Initial sync
+    if (makeSelect.value && modelSelect.options.length <= 1) {
+      fetchModels(makeSelect.value);
+    }
+    if (makeSelect.value && makeInput && !makeInput.value) {
+      const sel = makeSelect.options[makeSelect.selectedIndex];
+      if (sel) makeInput.value = sel.text.replace(' (disabled)', '');
+    }
+    if (modelSelect.value && modelInput && !modelInput.value) {
+      const sel = modelSelect.options[modelSelect.selectedIndex];
+      if (sel) modelInput.value = sel.text.replace(' (disabled)', '');
+    }
+  };
+
+  bindMakeModel(
+    document.getElementById('make_id'),
+    document.getElementById('model_id'),
+    document.getElementById('make_text'),
+    document.getElementById('model_text'),
+  );
+  bindMakeModel(
+    document.getElementById('filter_make_id'),
+    document.getElementById('filter_model_id')
+  );
+  bindMakeModel(
+    document.getElementById('public_make'),
+    document.getElementById('public_model')
+  );
+});
+
 /* ── Price range labels ── */
 document.addEventListener('DOMContentLoaded', () => {
   ['price_min', 'price_max', 'year_min', 'year_max'].forEach(id => {

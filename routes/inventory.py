@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify, current_app
 from flask_login import login_required, current_user
-from models import db, Vehicle, VehicleImage, VehicleDocument, SystemSettings
+from models import db, Vehicle, VehicleImage, VehicleDocument, SystemSettings, VehicleMake, VehicleModel
 from utils import allowed_image, allowed_doc, save_upload, log_action
 import io
 
@@ -21,13 +21,25 @@ def require_perm(action):
     return True
 
 
+def resolve_make_model(make_id_val, model_id_val, make_text, model_text):
+    """Resolve selected IDs to names while keeping free-text fallback."""
+    make_obj = VehicleMake.query.get(make_id_val) if make_id_val else None
+    model_obj = VehicleModel.query.get(model_id_val) if model_id_val else None
+    make_name = make_obj.name if make_obj else (make_text or '').strip()
+    model_name = model_obj.name if model_obj else (model_text or '').strip()
+    return make_obj.id if make_obj else None, model_obj.id if model_obj else None, make_name, model_name
+
+
 @inventory_bp.route('/')
 @login_required
 def list_vehicles():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('q', '')
     status_filter = request.args.get('status', '')
-    make_filter = request.args.get('make', '')
+    make_id_filter = request.args.get('make_id', type=int)
+    model_id_filter = request.args.get('model_id', type=int)
+    body_filter = request.args.get('body_type', '')
+    year_filter = request.args.get('year', type=int)
     archived = request.args.get('archived', '0') == '1'
 
     query = Vehicle.query.filter_by(is_archived=archived)
@@ -38,18 +50,36 @@ def list_vehicles():
             Vehicle.chassis_no.ilike(f'%{search}%') |
             Vehicle.reg_no.ilike(f'%{search}%')
         )
+    make_name = None
+    model_name = None
     if status_filter:
         query = query.filter(Vehicle.status == status_filter)
-    if make_filter:
-        query = query.filter(Vehicle.make == make_filter)
+    if make_id_filter:
+        mk = VehicleMake.query.get(make_id_filter)
+        if mk:
+            make_name = mk.name
+            query = query.filter(Vehicle.make == mk.name)
+    if model_id_filter:
+        mdl = VehicleModel.query.get(model_id_filter)
+        if mdl:
+            model_name = mdl.name
+            query = query.filter(Vehicle.model == mdl.name)
+    if body_filter:
+        query = query.filter(Vehicle.body_type == body_filter)
+    if year_filter:
+        query = query.filter(Vehicle.year == year_filter)
 
     query = query.order_by(Vehicle.created_at.desc())
     pagination = query.paginate(page=page, per_page=15, error_out=False)
-    makes = [m[0] for m in db.session.query(Vehicle.make).distinct().order_by(Vehicle.make).all() if m[0]]
+    makes = VehicleMake.query.filter_by(is_active=True).order_by(VehicleMake.name).all()
+    models_for_make = VehicleModel.query.filter_by(make_id=make_id_filter, is_active=True).order_by(VehicleModel.name).all() if make_id_filter else []
+    body_types = BODY_TYPES
 
     return render_template('admin/inventory/list.html', vehicles=pagination.items,
-                           pagination=pagination, makes=makes,
-                           filters=dict(q=search, status=status_filter, make=make_filter, archived=archived),
+                           pagination=pagination, makes=makes, models=models_for_make, body_types=body_types,
+                           filters=dict(q=search, status=status_filter, make_id=make_id_filter,
+                                        model_id=model_id_filter, make_name=make_name, model_name=model_name,
+                                        body_type=body_filter, year=year_filter, archived=archived),
                            statuses=STATUSES)
 
 
@@ -58,13 +88,22 @@ def list_vehicles():
 def new_vehicle():
     if not require_perm('create'):
         return redirect(url_for('inventory.list_vehicles'))
+    makes = VehicleMake.query.filter_by(is_active=True).order_by(VehicleMake.name).all()
+    models = VehicleModel.query.filter_by(is_active=True).order_by(VehicleModel.name).all()
     if request.method == 'POST':
+        make_id_val = request.form.get('make_id', type=int)
+        model_id_val = request.form.get('model_id', type=int)
+        make_text = request.form.get('make', '').strip()
+        model_text = request.form.get('model', '').strip()
+        make_id_resolved, model_id_resolved, make_name, model_name = resolve_make_model(make_id_val, model_id_val, make_text, model_text)
         v = Vehicle(
             chassis_no=request.form.get('chassis_no') or None,
             engine_no=request.form.get('engine_no') or None,
             reg_no=request.form.get('reg_no') or None,
-            make=request.form.get('make', '').strip(),
-            model=request.form.get('model', '').strip(),
+            make_id=make_id_resolved,
+            model_id=model_id_resolved,
+            make=make_name,
+            model=model_name,
             year=int(request.form.get('year', 2020)),
             body_type=request.form.get('body_type'),
             fuel_type=request.form.get('fuel_type'),
@@ -98,7 +137,8 @@ def new_vehicle():
 
     return render_template('admin/inventory/form.html', vehicle=None,
                            body_types=BODY_TYPES, fuel_types=FUEL_TYPES,
-                           transmissions=TRANSMISSIONS, conditions=CONDITIONS, statuses=STATUSES)
+                           transmissions=TRANSMISSIONS, conditions=CONDITIONS, statuses=STATUSES,
+                           makes=makes, models=models)
 
 
 @inventory_bp.route('/<int:vehicle_id>')
@@ -114,12 +154,21 @@ def edit_vehicle(vehicle_id):
     vehicle = Vehicle.query.get_or_404(vehicle_id)
     if not require_perm('edit'):
         return redirect(url_for('inventory.view_vehicle', vehicle_id=vehicle_id))
+    makes = VehicleMake.query.filter_by(is_active=True).order_by(VehicleMake.name).all()
+    models = VehicleModel.query.filter_by(is_active=True).order_by(VehicleModel.name).all()
     if request.method == 'POST':
+        make_id_val = request.form.get('make_id', type=int)
+        model_id_val = request.form.get('model_id', type=int)
+        make_text = request.form.get('make', '').strip()
+        model_text = request.form.get('model', '').strip()
+        make_id_resolved, model_id_resolved, make_name, model_name = resolve_make_model(make_id_val, model_id_val, make_text, model_text)
         vehicle.chassis_no = request.form.get('chassis_no') or None
         vehicle.engine_no = request.form.get('engine_no') or None
         vehicle.reg_no = request.form.get('reg_no') or None
-        vehicle.make = request.form.get('make', '').strip()
-        vehicle.model = request.form.get('model', '').strip()
+        vehicle.make_id = make_id_resolved
+        vehicle.model_id = model_id_resolved
+        vehicle.make = make_name
+        vehicle.model = model_name
         vehicle.year = int(request.form.get('year', vehicle.year))
         vehicle.body_type = request.form.get('body_type')
         vehicle.fuel_type = request.form.get('fuel_type')
@@ -151,7 +200,8 @@ def edit_vehicle(vehicle_id):
 
     return render_template('admin/inventory/form.html', vehicle=vehicle,
                            body_types=BODY_TYPES, fuel_types=FUEL_TYPES,
-                           transmissions=TRANSMISSIONS, conditions=CONDITIONS, statuses=STATUSES)
+                           transmissions=TRANSMISSIONS, conditions=CONDITIONS, statuses=STATUSES,
+                           makes=makes, models=models)
 
 
 @inventory_bp.route('/<int:vehicle_id>/archive', methods=['POST'])
@@ -219,3 +269,10 @@ def delete_doc(vehicle_id, doc_id):
     db.session.commit()
     flash('Document deleted.', 'success')
     return redirect(url_for('inventory.view_vehicle', vehicle_id=vehicle_id))
+
+
+@inventory_bp.route('/models-for-make/<int:make_id>')
+@login_required
+def models_for_make(make_id):
+    models = VehicleModel.query.filter_by(make_id=make_id, is_active=True).order_by(VehicleModel.name).all()
+    return jsonify([{'id': m.id, 'name': m.name, 'make_id': m.make_id} for m in models])

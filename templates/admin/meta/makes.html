@@ -1,0 +1,72 @@
+{% extends 'admin/base.html' %}
+{% block title %}Vehicle Meta Data — Makes{% endblock %}
+{% block page_title %}Vehicle Meta Data{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Vehicle Meta Data</h1>
+    <nav aria-label="breadcrumb"><ol class="breadcrumb">
+      <li class="breadcrumb-item">Vehicle Management</li>
+      <li class="breadcrumb-item active">Makes</li>
+    </ol></nav>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{{ url_for('vehicle_meta.models') }}"><i class="bi bi-diagram-3 me-1"></i>Models</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="admin-card">
+      <div class="card-header"><i class="bi bi-plus-circle me-2"></i>Add Make / Brand</div>
+      <div class="card-body">
+        <form method="post">
+          <label class="form-label">Name</label>
+          <input type="text" class="form-control" name="name" placeholder="e.g. Toyota" required>
+          <div class="form-text">Creates an active make; use deactivate if you stop using it.</div>
+          <button type="submit" class="btn btn-primary w-100 mt-3">Add Make</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="admin-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div><i class="bi bi-tags me-2"></i>All Makes</div>
+        <span class="badge bg-secondary">{{ makes|length }} total</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table admin-table mb-0">
+          <thead><tr><th>Name</th><th>Status</th><th style="width:180px">Actions</th></tr></thead>
+          <tbody>
+            {% for mk in makes %}
+            <tr>
+              <td class="fw-600">{{ mk.name }}</td>
+              <td>
+                {% if mk.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Disabled</span>{% endif %}
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  <form method="post" action="{{ url_for('vehicle_meta.toggle_make', make_id=mk.id) }}">
+                    <button class="btn btn-sm {% if mk.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
+                      {% if mk.is_active %}<i class="bi bi-pause"></i> Disable{% else %}<i class="bi bi-play"></i> Activate{% endif %}
+                    </button>
+                  </form>
+                  <form method="post" action="{{ url_for('vehicle_meta.delete_make', make_id=mk.id) }}" onsubmit="return confirm('Hard delete this make? This is only allowed if not in use.');">
+                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-center text-muted py-3">No makes yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer small text-muted">Soft-disable keeps history intact; hard-delete only when unused.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

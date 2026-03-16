@@ -20,9 +20,17 @@
           <!-- Make -->
           <div class="mb-3">
             <label class="form-label small fw-600">Make</label>
-            <select class="form-select form-select-sm" name="make">
+            <select class="form-select form-select-sm" name="make_id" id="public_make" data-model-url="{{ url_for('public.public_models_for_make', make_id=0) }}">
               <option value="">All Makes</option>
-              {% for m in makes %}<option value="{{ m }}" {% if filters.make == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+              {% for mk in makes %}<option value="{{ mk.id }}" {% if filters.make_id == mk.id %}selected{% endif %}>{{ mk.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <!-- Model -->
+          <div class="mb-3">
+            <label class="form-label small fw-600">Model</label>
+            <select class="form-select form-select-sm" name="model" id="public_model" data-placeholder="All Models" data-value-field="name">
+              <option value="">All Models</option>
+              {% for mdl in models %}<option value="{{ mdl.name }}" {% if filters.model == mdl.name %}selected{% endif %}>{{ mdl.name }}</option>{% endfor %}
             </select>
           </div>
           <!-- Body Type -->
@@ -77,7 +85,7 @@
       <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
         <div>
           <span class="fw-600">{{ pagination.total }} vehicles</span>
-          {% if filters.q or filters.make %}<span class="text-muted small ms-2">found matching your criteria</span>{% endif %}
+          {% if filters.q or filters.make_id or filters.make %}<span class="text-muted small ms-2">found matching your criteria</span>{% endif %}
         </div>
         <div class="d-flex gap-2 align-items-center">
           <select class="form-select form-select-sm" style="width:auto" name="sort" form="vehicle-filter-form" onchange="document.getElementById('vehicle-filter-form').submit()">

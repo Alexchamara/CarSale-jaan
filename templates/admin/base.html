@@ -45,6 +45,11 @@
       <i class="bi bi-car-front"></i> Inventory
     </a></li>
     {% endif %}
+    {% if current_user.has_permission('inventory','view') %}
+    <li><a class="nav-link {% if request.blueprint == 'vehicle_meta' %}active{% endif %}" href="{{ url_for('vehicle_meta.makes') }}">
+      <i class="bi bi-tags"></i> Vehicle Meta Data
+    </a></li>
+    {% endif %}
     {% if current_user.has_permission('costing','view') %}
     <li><a class="nav-link {% if request.blueprint == 'costing' %}active{% endif %}" href="{{ url_for('costing.list_costing') }}">
       <i class="bi bi-calculator"></i> Costing & LC

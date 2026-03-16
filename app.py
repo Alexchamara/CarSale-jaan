@@ -21,6 +21,7 @@ def create_app(config_class=Config):
     from routes.auth import auth_bp
     from routes.inventory import inventory_bp
     from routes.costing import costing_bp
+    from routes.vehicle_meta import vehicle_meta_bp
     from routes.quotations import quotations_bp
     from routes.sales import sales_bp
     from routes.customers import customers_bp
@@ -31,6 +32,7 @@ def create_app(config_class=Config):
     app.register_blueprint(public_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(inventory_bp, url_prefix='/admin/inventory')
+    app.register_blueprint(vehicle_meta_bp, url_prefix='/admin/vehicle-meta')
     app.register_blueprint(costing_bp, url_prefix='/admin/costing')
     app.register_blueprint(quotations_bp, url_prefix='/admin/quotations')
     app.register_blueprint(sales_bp, url_prefix='/admin/sales')

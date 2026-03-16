@@ -26,11 +26,27 @@
           <div class="row g-3">
             <div class="col-md-4">
               <label class="form-label">Make / Brand *</label>
-              <input type="text" class="form-control" name="make" value="{{ vehicle.make if vehicle else '' }}" required placeholder="e.g. Toyota">
+              <select class="form-select mb-2" name="make_id" id="make_id" data-model-select="model_id">
+                <option value="">Select managed make…</option>
+                {% for mk in makes %}
+                  <option value="{{ mk.id }}" {% if vehicle and vehicle.make_id == mk.id %}selected{% endif %}>{{ mk.name }}{% if not mk.is_active %} (disabled){% endif %}</option>
+                {% endfor %}
+              </select>
+              <input type="text" class="form-control" name="make" id="make_text" value="{{ vehicle.make if vehicle else '' }}" required placeholder="Type or select make">
+              <div class="form-text">Pick a managed make or type a custom name.</div>
             </div>
             <div class="col-md-4">
               <label class="form-label">Model *</label>
-              <input type="text" class="form-control" name="model" value="{{ vehicle.model if vehicle else '' }}" required placeholder="e.g. Aqua">
+              <select class="form-select mb-2" name="model_id" id="model_id" data-model-url="{{ url_for('inventory.models_for_make', make_id=0) }}">
+                <option value="">Select managed model…</option>
+                {% for mdl in models %}
+                  {% if not vehicle or not vehicle.make_id or mdl.make_id == vehicle.make_id %}
+                  <option value="{{ mdl.id }}" data-make="{{ mdl.make_id }}" {% if vehicle and vehicle.model_id == mdl.id %}selected{% endif %}>{{ mdl.name }}{% if not mdl.is_active %} (disabled){% endif %}</option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+              <input type="text" class="form-control" name="model" id="model_text" value="{{ vehicle.model if vehicle else '' }}" required placeholder="Type or select model">
+              <div class="form-text">Model list filters by make; keep free text if needed.</div>
             </div>
             <div class="col-md-4">
               <label class="form-label">Year *</label>

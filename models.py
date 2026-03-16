@@ -88,6 +88,28 @@ class User(UserMixin, db.Model):
         }
         return labels.get(self.role, self.role.title())
 
+# ─── Vehicle Meta Data ───────────────────────────────────────────────────────
+class VehicleMake(db.Model):
+    __tablename__ = 'vehicle_makes'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    models = db.relationship('VehicleModel', backref='make', lazy=True, cascade='all, delete-orphan')
+
+
+class VehicleModel(db.Model):
+    __tablename__ = 'vehicle_models'
+    id = db.Column(db.Integer, primary_key=True)
+    make_id = db.Column(db.Integer, db.ForeignKey('vehicle_makes.id'), nullable=False)
+    name = db.Column(db.String(80), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('make_id', 'name', name='uq_make_model'),)
+
+
 # ─── Vehicle ──────────────────────────────────────────────────────────────────
 class Vehicle(db.Model):
     __tablename__ = 'vehicles'
@@ -95,6 +117,8 @@ class Vehicle(db.Model):
     chassis_no = db.Column(db.String(50), unique=True)
     engine_no = db.Column(db.String(50))
     reg_no = db.Column(db.String(30))
+    make_id = db.Column(db.Integer, db.ForeignKey('vehicle_makes.id'))
+    model_id = db.Column(db.Integer, db.ForeignKey('vehicle_models.id'))
     make = db.Column(db.String(50), nullable=False)
     model = db.Column(db.String(50), nullable=False)
     year = db.Column(db.Integer, nullable=False)
@@ -119,6 +143,8 @@ class Vehicle(db.Model):
     cost_sheet = db.relationship('CostSheet', backref='vehicle', lazy=True, uselist=False, cascade='all, delete-orphan')
     quotations = db.relationship('Quotation', backref='vehicle', lazy=True)
     sales = db.relationship('Sale', backref='vehicle', lazy=True)
+    make_ref = db.relationship('VehicleMake', foreign_keys=[make_id])
+    model_ref = db.relationship('VehicleModel', foreign_keys=[model_id])
 
     def primary_image(self):
         p = VehicleImage.query.filter_by(vehicle_id=self.id, is_primary=True).first()

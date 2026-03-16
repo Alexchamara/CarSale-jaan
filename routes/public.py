@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models import Vehicle, VehicleImage, SystemSettings, Inquiry, db
+from models import Vehicle, VehicleImage, SystemSettings, Inquiry, db, VehicleMake, VehicleModel
 from sqlalchemy import or_
 
 public_bp = Blueprint('public', __name__)
@@ -11,7 +11,8 @@ def index():
         Vehicle.status != 'sold').order_by(Vehicle.updated_at.desc()).limit(8).all()
     latest_vehicles = Vehicle.query.filter_by(is_archived=False).filter(
         Vehicle.status != 'sold').order_by(Vehicle.created_at.desc()).limit(6).all()
-    makes = [m[0] for m in db.session.query(Vehicle.make).filter_by(is_archived=False).distinct().all() if m[0]]
+    makes = VehicleMake.query.filter_by(is_active=True).order_by(VehicleMake.name).all()
+    models = []
     body_types = [
         'Sedan', 'SUV', 'Hatchback', 'Van', 'Pickup', 'Coupe', 'Wagon', 'Minivan'
     ]
@@ -22,7 +23,7 @@ def index():
         'happy_customers': Vehicle.query.filter_by(status='sold').count(),
     }
     return render_template('public/index.html', featured_vehicles=featured_vehicles,
-                           latest_vehicles=latest_vehicles, makes=makes,
+                           latest_vehicles=latest_vehicles, makes=makes, models=models,
                            body_types=body_types, fuel_types=fuel_types, stats=stats)
 
 
@@ -32,7 +33,8 @@ def vehicles():
     per_page = 12
     query = Vehicle.query.filter_by(is_archived=False).filter(Vehicle.status != 'sold')
 
-    make = request.args.get('make', '')
+    make_id = request.args.get('make_id', type=int)
+    make = request.args.get('make', '')  # legacy fallback
     model_q = request.args.get('model', '')
     year_min = request.args.get('year_min', type=int)
     year_max = request.args.get('year_max', type=int)
@@ -44,6 +46,10 @@ def vehicles():
     search = request.args.get('q', '')
     sort_by = request.args.get('sort', 'newest')
 
+    if make_id:
+        mk = VehicleMake.query.get(make_id)
+        if mk:
+            make = mk.name
     if make:
         query = query.filter(Vehicle.make == make)
     if model_q:
@@ -80,15 +86,17 @@ def vehicles():
     query = query.order_by(sort_map.get(sort_by, Vehicle.created_at.desc()))
 
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-    makes_list = [m[0] for m in db.session.query(Vehicle.make).filter_by(is_archived=False).distinct().order_by(Vehicle.make).all() if m[0]]
+    makes_list = VehicleMake.query.filter_by(is_active=True).order_by(VehicleMake.name).all()
+    models_list = VehicleModel.query.filter_by(make_id=make_id, is_active=True).order_by(VehicleModel.name).all() if make_id else []
     total = query.count() if not pagination else pagination.total
 
-    filters = dict(make=make, model=model_q, year_min=year_min, year_max=year_max,
+    filters = dict(make=make, make_id=make_id, model=model_q, model_id=None,
+                   year_min=year_min, year_max=year_max,
                    price_min=price_min, price_max=price_max, fuel_type=fuel_type,
                    body_type=body_type, transmission=transmission, q=search, sort=sort_by)
 
     return render_template('public/vehicles.html', vehicles=pagination.items,
-                           pagination=pagination, makes=makes_list, filters=filters,
+                           pagination=pagination, makes=makes_list, models=models_list, filters=filters,
                            fuel_types=['Petrol', 'Diesel', 'Hybrid', 'Electric'],
                            body_types=['Sedan', 'SUV', 'Hatchback', 'Van', 'Pickup', 'Coupe', 'Wagon', 'Minivan'],
                            transmissions=['Automatic', 'Manual', 'CVT'])
@@ -102,6 +110,12 @@ def vehicle_detail(vehicle_id):
         Vehicle.is_archived == False, Vehicle.status != 'sold'
     ).limit(4).all()
     return render_template('public/vehicle_detail.html', vehicle=vehicle, related=related)
+
+
+@public_bp.route('/models-for-make/<int:make_id>')
+def public_models_for_make(make_id):
+    models = VehicleModel.query.filter_by(make_id=make_id, is_active=True).order_by(VehicleModel.name).all()
+    return jsonify([{'id': m.id, 'name': m.name, 'make_id': m.make_id} for m in models])
 
 
 @public_bp.route('/vehicles/<int:vehicle_id>/inquire', methods=['POST'])

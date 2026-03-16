@@ -1,0 +1,82 @@
+{% extends 'admin/base.html' %}
+{% block title %}Vehicle Meta Data — Models{% endblock %}
+{% block page_title %}Vehicle Models{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Vehicle Models</h1>
+    <nav aria-label="breadcrumb"><ol class="breadcrumb">
+      <li class="breadcrumb-item">Vehicle Management</li>
+      <li class="breadcrumb-item active">Models</li>
+    </ol></nav>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{{ url_for('vehicle_meta.makes') }}"><i class="bi bi-tags me-1"></i>Makes</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="admin-card">
+      <div class="card-header"><i class="bi bi-plus-circle me-2"></i>Add Model</div>
+      <div class="card-body">
+        <form method="post">
+          <label class="form-label">Make</label>
+          <select class="form-select" name="make_id" required>
+            <option value="">Select make…</option>
+            {% for mk in makes %}<option value="{{ mk.id }}" {% if selected_make_id == mk.id %}selected{% endif %}>{{ mk.name }}{% if not mk.is_active %} (disabled){% endif %}</option>{% endfor %}
+          </select>
+          <label class="form-label mt-3">Model Name</label>
+          <input type="text" class="form-control" name="name" placeholder="e.g. Corolla" required>
+          <div class="form-text">Models are scoped to a make; deactivate instead of deleting if in use.</div>
+          <button type="submit" class="btn btn-primary w-100 mt-3">Add Model</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="admin-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-diagram-3"></i><span>Models</span>
+        </div>
+        <form method="get" class="d-flex gap-2 align-items-center mb-0">
+          <select class="form-select form-select-sm" name="make_id" onchange="this.form.submit()">
+            <option value="">All makes</option>
+            {% for mk in makes %}<option value="{{ mk.id }}" {% if selected_make_id == mk.id %}selected{% endif %}>{{ mk.name }}</option>{% endfor %}
+          </select>
+        </form>
+      </div>
+      <div class="table-responsive">
+        <table class="table admin-table mb-0">
+          <thead><tr><th>Model</th><th>Make</th><th>Status</th><th style="width:200px">Actions</th></tr></thead>
+          <tbody>
+            {% for mdl in models %}
+            <tr>
+              <td class="fw-600">{{ mdl.name }}</td>
+              <td>{{ mdl.make.name if mdl.make else '—' }}</td>
+              <td>{% if mdl.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Disabled</span>{% endif %}</td>
+              <td>
+                <div class="d-flex gap-1">
+                  <form method="post" action="{{ url_for('vehicle_meta.toggle_model', model_id=mdl.id) }}">
+                    <button class="btn btn-sm {% if mdl.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
+                      {% if mdl.is_active %}<i class="bi bi-pause"></i> Disable{% else %}<i class="bi bi-play"></i> Activate{% endif %}
+                    </button>
+                  </form>
+                  <form method="post" action="{{ url_for('vehicle_meta.delete_model', model_id=mdl.id) }}" onsubmit="return confirm('Hard delete this model? Only allowed if not attached to vehicles.');">
+                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-3">No models yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -38,9 +38,15 @@
                 <input type="text" class="form-control" name="q" placeholder="e.g. Toyota Prius" value="{{ request.args.get('q','') }}">
               </div>
               <div class="col-6">
-                <select class="form-select" name="make">
+                <select class="form-select" name="make_id" id="public_make" data-model-url="{{ url_for('public.public_models_for_make', make_id=0) }}">
                   <option value="">Any Make</option>
-                  {% for m in makes %}<option value="{{ m }}" {% if request.args.get('make') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+                  {% for mk in makes %}<option value="{{ mk.id }}">{{ mk.name }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="col-6">
+                <select class="form-select" name="model" id="public_model" data-placeholder="Any Model" data-value-field="name">
+                  <option value="">Any Model</option>
+                  {% for mdl in models %}<option value="{{ mdl.name }}">{{ mdl.name }}</option>{% endfor %}
                 </select>
               </div>
               <div class="col-6">
