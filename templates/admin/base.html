@@ -17,7 +17,10 @@
 <!-- Sidebar -->
 <nav class="admin-sidebar">
   <a class="sidebar-brand" href="{{ url_for('reports.dashboard') }}">
-    <div class="brand-icon">S</div>
+    {% set logo_src = url_for('static', filename='uploads/logos/' + settings.logo) if settings and settings.logo else url_for('static', filename='logo.png') %}
+    <div class="brand-icon">
+      <img src="{{ logo_src }}" alt="{{ settings.company_name if settings else 'Sonnac Lanka' }} logo">
+    </div>
     <div>
       {{ settings.company_name if settings else 'Sonnac Lanka' }}
       <span class="brand-sub">Management Portal</span>

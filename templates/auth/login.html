@@ -11,7 +11,10 @@
 <body>
 <div class="login-container">
   <div class="login-card">
-    <div class="login-logo"><i class="bi bi-car-front-fill"></i></div>
+    {% set logo_src = url_for('static', filename='uploads/logos/' + settings.logo) if settings and settings.logo else url_for('static', filename='logo.png') %}
+    <div class="login-logo">
+      <img src="{{ logo_src }}" alt="{{ settings.company_name if settings else 'Sonnac Lanka' }} logo" height="64">
+    </div>
     <h4 class="text-center fw-800 mb-1" style="color:var(--primary)">{{ settings.company_name if settings else 'Sonnac Lanka' }}</h4>
     <p class="text-center text-muted small mb-4">Sign in to the management portal</p>
 
