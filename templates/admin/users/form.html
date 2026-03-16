@@ -1,0 +1,73 @@
+{% extends 'admin/base.html' %}
+{% block title %}{{ 'Edit' if user else 'New' }} User{% endblock %}
+{% block page_title %}{{ 'Edit' if user else 'New' }} User{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ 'Edit User' if user else 'New User' }}</h1>
+    <nav aria-label="breadcrumb"><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('users.list_users') }}">Users</a></li>
+      <li class="breadcrumb-item active">{{ 'Edit' if user else 'New' }}</li>
+    </ol></nav>
+  </div>
+</div>
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="admin-card">
+      <div class="card-header"><i class="bi bi-person me-2"></i>User Details</div>
+      <div class="card-body">
+        <form method="post">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Full Name *</label>
+              <input type="text" class="form-control" name="name" value="{{ user.name if user else '' }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Username *</label>
+              <input type="text" class="form-control" name="username" value="{{ user.username if user else '' }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" name="email" value="{{ user.email if user else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Role *</label>
+              <select class="form-select" name="role" required>
+                {% for r in roles %}
+                <option value="{{ r }}" {% if user and user.role == r %}selected{% endif %}>{{ r.replace('_',' ').title() }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Password {% if user %}<span class="text-muted small">(leave blank to keep current)</span>{% else %}*{% endif %}</label>
+              <input type="password" class="form-control" name="password" {% if not user %}required{% endif %} minlength="6">
+            </div>
+            <div class="col-12 d-flex gap-2 justify-content-end">
+              <a href="{{ url_for('users.list_users') }}" class="btn btn-outline-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-circle me-2"></i>{{ 'Update' if user else 'Create' }} User</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    <!-- Role Permissions Reference -->
+    <div class="admin-card mt-4">
+      <div class="card-header"><i class="bi bi-shield me-2"></i>Role Permissions Guide</div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead><tr><th>Role</th><th>Capabilities</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge bg-danger">Admin</span></td><td class="small">Full access to all modules including user management and settings</td></tr>
+              <tr><td><span class="badge bg-primary">Sales Manager</span></td><td class="small">Inventory, costing, quotations, sales, customers, reports</td></tr>
+              <tr><td><span class="badge bg-info">Sales Executive</span></td><td class="small">View inventory, create quotations, manage customers, sales pipeline</td></tr>
+              <tr><td><span class="badge bg-warning text-dark">Accounts</span></td><td class="small">View all, manage payments and costing, generate reports</td></tr>
+              <tr><td><span class="badge bg-secondary">Viewer</span></td><td class="small">Read-only access to inventory and reports</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends 'admin/base.html' %}
+{% block title %}{{ 'Edit' if quotation else 'New' }} Quotation{% endblock %}
+{% block page_title %}{{ 'Edit' if quotation else 'New' }} Quotation{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ 'Edit Quotation' if quotation else 'New Quotation / Invoice' }}</h1>
+    <nav aria-label="breadcrumb"><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('quotations.list_quotations') }}">Quotations</a></li>
+      <li class="breadcrumb-item active">{{ 'Edit' if quotation else 'New' }}</li>
+    </ol></nav>
+  </div>
+</div>
+
+<form method="post" id="quotation-form">
+  <div class="row g-4">
+    <!-- Main content -->
+    <div class="col-lg-8">
+
+      <!-- Header info -->
+      <div class="admin-card mb-4">
+        <div class="card-header"><i class="bi bi-person me-2"></i>Customer & Document</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Customer *</label>
+              <select class="form-select" name="customer_id" required>
+                <option value="">Select customer…</option>
+                {% for c in customers %}
+                <option value="{{ c.id }}" {% if quotation and quotation.customer_id == c.id %}selected{% elif request.args.get('customer_id') == c.id|string %}selected{% endif %}>
+                  {{ c.name }} {% if c.phone %}({{ c.phone }}){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Vehicle</label>
+              <select class="form-select" name="vehicle_id">
+                <option value="">Select vehicle…</option>
+                {% for v in vehicles %}
+                <option value="{{ v.id }}" {% if quotation and quotation.vehicle_id == v.id %}selected{% elif request.args.get('vehicle_id') == v.id|string %}selected{% endif %}>
+                  {{ v.year }} {{ v.make }} {{ v.model }} {% if v.chassis_no %}({{ v.chassis_no }}){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Document Type *</label>
+              <select class="form-select" name="doc_type">
+                {% for dt, dlabel in [('quotation','Quotation'),('proforma_invoice','Proforma Invoice'),('tax_invoice','Tax Invoice')] %}
+                <option value="{{ dt }}" {% if quotation and quotation.doc_type == dt %}selected{% endif %}>{{ dlabel }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Currency</label>
+              <select class="form-select" name="currency">
+                {% for c in ['LKR','USD','EUR','GBP'] %}
+                <option value="{{ c }}" {% if quotation and quotation.currency == c %}selected{% elif not quotation and c == 'LKR' %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Valid Until</label>
+              <input type="date" class="form-control" name="valid_until" value="{{ quotation.valid_until.strftime('%Y-%m-%d') if quotation and quotation.valid_until else '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Notes / Terms</label>
+              <textarea class="form-control" name="notes" rows="2">{{ quotation.notes if quotation and quotation.notes else (settings.terms_and_conditions if settings else '') }}</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Line Items -->
+      <div class="admin-card mb-4">
+        <div class="card-header">
+          <span><i class="bi bi-list-ol me-2"></i>Line Items</span>
+          <button type="button" class="btn btn-sm btn-primary" onclick="addQuoteItem()">
+            <i class="bi bi-plus me-1"></i>Add Item
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <table class="table admin-table mb-0 quote-items-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th style="width:90px">Qty</th>
+                <th style="width:130px">Unit Price</th>
+                <th style="width:130px" class="text-end pe-2">Total</th>
+                <th style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody id="quote-items-body">
+              {% if quotation and quotation.items %}
+                {% for item in quotation.items %}
+                <tr class="quote-item-row" data-total="{{ item.total }}">
+                  <td><input type="text" class="form-control" name="item_desc[]" value="{{ item.description }}" required></td>
+                  <td><input type="number" class="form-control item-qty" name="item_qty[]" value="{{ item.quantity }}" min="1" step="1"></td>
+                  <td><input type="number" class="form-control item-price" name="item_price[]" value="{{ item.unit_price }}" min="0" step="0.01"></td>
+                  <td class="item-total fw-bold text-end pe-2">{{ "{:,.2f}".format(item.total) }}</td>
+                  <td><button type="button" class="btn btn-sm btn-outline-danger remove-item-btn" onclick="removeQuoteItem(this)"><i class="bi bi-trash"></i></button></td>
+                </tr>
+                {% endfor %}
+              {% endif %}
+            </tbody>
+          </table>
+          {% if not quotation or not quotation.items %}
+          <script>document.addEventListener('DOMContentLoaded', () => addQuoteItem('{{ preload_desc if preload_desc else 'Vehicle Purchase — ' + (preload_vehicle if preload_vehicle else '') }}', 1, {{ preload_price if preload_price else 0 }}));</script>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Totals sidebar -->
+    <div class="col-lg-4">
+      <div class="admin-card mb-4 position-sticky" style="top:80px">
+        <div class="card-header"><i class="bi bi-calculator me-2"></i>Totals</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Discount (%)</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="discount_pct" name="discount_pct" value="{{ quotation.discount_pct if quotation else 0 }}" min="0" max="100" step="0.1">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Tax (%)</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="tax_pct" name="tax_pct" value="{{ quotation.tax_pct if quotation else (settings.tax_rate if settings else 0) }}" min="0" max="100" step="0.1">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="quote-total-card">
+            <div class="total-line"><span>Subtotal</span><span id="qt-subtotal">Rs 0.00</span></div>
+            <div class="total-line"><span>Discount</span><span id="qt-discount">Rs 0.00</span></div>
+            <div class="total-line"><span>Tax</span><span id="qt-tax">Rs 0.00</span></div>
+            <div class="total-line grand-total"><span>TOTAL</span><span id="qt-total">Rs 0.00</span></div>
+          </div>
+          <!-- Hidden computed fields -->
+          <input type="hidden" name="subtotal" id="qt-subtotal-val">
+          <input type="hidden" name="discount_amount" id="qt-discount-val">
+          <input type="hidden" name="tax_amount" id="qt-tax-val">
+          <input type="hidden" name="total" id="qt-total-val">
+        </div>
+        <div class="card-body border-top pt-3">
+          <div class="d-grid gap-2">
+            <button type="submit" name="action" value="save" class="btn btn-primary">
+              <i class="bi bi-save me-2"></i>Save Draft
+            </button>
+            <button type="submit" name="action" value="send" class="btn btn-success">
+              <i class="bi bi-send me-2"></i>Save & Mark Sent
+            </button>
+            <a href="{{ url_for('quotations.list_quotations') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

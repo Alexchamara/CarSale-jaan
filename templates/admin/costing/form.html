@@ -1,0 +1,169 @@
+{% extends 'admin/base.html' %}
+{% block title %}Cost Sheet — {{ vehicle.make }} {{ vehicle.model }}{% endblock %}
+{% block page_title %}Costing & LC Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-calculator me-2"></i>Cost Sheet</h1>
+    <nav aria-label="breadcrumb"><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('inventory.list_vehicles') }}">Inventory</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('inventory.view_vehicle', vehicle_id=vehicle.id) }}">{{ vehicle.make }} {{ vehicle.model }}</a></li>
+      <li class="breadcrumb-item active">Costing</li>
+    </ol></nav>
+  </div>
+  {% if cost_sheet %}
+  <a href="{{ url_for('costing.cost_sheet_pdf', vehicle_id=vehicle.id) }}" class="btn btn-outline-danger btn-sm" target="_blank"><i class="bi bi-file-pdf me-1"></i>Download PDF</a>
+  {% endif %}
+</div>
+
+<form method="post">
+<div class="row g-4">
+  <div class="col-lg-8">
+    <!-- Vehicle Info Banner -->
+    <div class="alert alert-primary d-flex gap-3 align-items-center mb-4">
+      {% if vehicle.images %}
+        {% set img = vehicle.images[0] %}
+        <img src="{{ url_for('static', filename='uploads/vehicles/' + img.filename) }}" style="width:64px;height:48px;object-fit:cover;border-radius:6px">
+      {% endif %}
+      <div>
+        <strong>{{ vehicle.year }} {{ vehicle.make }} {{ vehicle.model }}</strong>
+        {% if vehicle.chassis_no %} · <span class="font-monospace small">{{ vehicle.chassis_no }}</span>{% endif %}
+      </div>
+    </div>
+
+    <!-- Currency & Exchange -->
+    <div class="admin-card mb-4">
+      <div class="card-header"><i class="bi bi-currency-exchange me-2"></i>Import Details</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Currency</label>
+            <select class="form-select" name="currency">
+              {% for c in ['JPY','USD','GBP','EUR','SGD','AED'] %}
+              <option value="{{ c }}" {% if cost_sheet and cost_sheet.currency == c %}selected{% elif not cost_sheet and c == 'JPY' %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Exchange Rate</label>
+            <input type="number" class="form-control" name="exchange_rate" id="exchange_rate" value="{{ cost_sheet.exchange_rate if cost_sheet else '' }}" step="0.01" placeholder="e.g. 0.74">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Purchase Price (Foreign Currency)</label>
+            <input type="number" class="form-control cost-input" name="purchase_price_fc" id="purchase_price_fc" value="{{ cost_sheet.purchase_price_fc if cost_sheet else '' }}" step="0.01">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LC & Import Costs -->
+    <div class="admin-card mb-4">
+      <div class="card-header"><i class="bi bi-file-earmark-text me-2"></i>LC & Bank Charges</div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% set lc_fields = [
+            ('lc_value','LC Value (Rs)'),
+            ('bank_charges','Bank Charges'),
+            ('lc_interest','LC Interest'),
+          ] %}
+          {% for fname, flabel in lc_fields %}
+          <div class="col-md-4">
+            <label class="form-label">{{ flabel }}</label>
+            <div class="input-group"><span class="input-group-text small">Rs</span>
+            <input type="number" class="form-control cost-input" name="{{ fname }}" value="{{ cost_sheet[fname] if cost_sheet else '' }}" step="0.01" min="0"></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Duties & Taxes -->
+    <div class="admin-card mb-4">
+      <div class="card-header"><i class="bi bi-receipt me-2"></i>Duties, Taxes & Levies</div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% set duty_fields = [
+            ('import_duty','Import Duty'),('customs_levy','Customs Levy'),
+            ('excise_duty','Excise Duty'),('vat_import','VAT on Imports'),
+          ] %}
+          {% for fname, flabel in duty_fields %}
+          <div class="col-md-3">
+            <label class="form-label">{{ flabel }}</label>
+            <div class="input-group"><span class="input-group-text small">Rs</span>
+            <input type="number" class="form-control cost-input" name="{{ fname }}" value="{{ cost_sheet[fname] if cost_sheet else '' }}" step="0.01" min="0"></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Handling & Logistics -->
+    <div class="admin-card mb-4">
+      <div class="card-header"><i class="bi bi-truck me-2"></i>Freight, Handling & Other</div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% set logis_fields = [
+            ('port_handling','Port Handling'),('freight','Freight'),
+            ('insurance_import','Insurance'),('agent_fees','Agent Fees'),
+            ('clearing_charges','Clearing Charges'),('inland_transport','Inland Transport'),
+            ('other_costs','Other Costs'),
+          ] %}
+          {% for fname, flabel in logis_fields %}
+          <div class="col-md-3">
+            <label class="form-label">{{ flabel }}</label>
+            <div class="input-group"><span class="input-group-text small">Rs</span>
+            <input type="number" class="form-control cost-input" name="{{ fname }}" value="{{ cost_sheet[fname] if cost_sheet else '' }}" step="0.01" min="0"></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right: Summary -->
+  <div class="col-lg-4">
+    <div class="admin-card mb-4 position-sticky" style="top:80px">
+      <div class="card-header"><i class="bi bi-calculator me-2"></i>Cost Summary</div>
+      <div class="card-body">
+        <div class="cost-total-row d-flex justify-content-between align-items-center mb-3">
+          <span>Total Landed Cost</span>
+          <span id="cost-total-display" class="fs-5">Rs 0.00</span>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Target Margin (%)</label>
+          <div class="input-group">
+            <input type="number" class="form-control" name="target_margin_pct" id="target_margin_pct" value="{{ cost_sheet.target_margin_pct if cost_sheet else 15 }}" step="0.1" min="0" max="100">
+            <span class="input-group-text">%</span>
+          </div>
+        </div>
+        <div class="p-3 rounded-3 mb-3" style="background:#f0f8f0;border:1px solid #c8e6c9">
+          <div class="text-muted small mb-1">Suggested Selling Price</div>
+          <div class="fw-800 fs-4" style="color:var(--primary)" id="target-price-display">Rs 0.00</div>
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" name="apply_price" id="apply_price">
+          <label class="form-check-label" for="apply_price">Apply as vehicle selling price</label>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-save me-2"></i>Save Cost Sheet
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Init cost calc on load
+document.addEventListener('DOMContentLoaded', calcCostTotals);
+document.getElementById('exchange_rate')?.addEventListener('input', calcCostTotals);
+document.getElementById('target_margin_pct')?.addEventListener('input', calcCostTotals);
+{% if cost_sheet and cost_sheet.total_landed_cost %}
+document.getElementById('cost-total-display').textContent = 'Rs {{ "{:,.2f}".format(cost_sheet.total_landed_cost) }}';
+{% endif %}
+</script>
+{% endblock %}

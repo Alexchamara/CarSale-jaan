@@ -1,0 +1,188 @@
+{% extends 'admin/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h1>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('inventory.new_vehicle') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Add Vehicle</a>
+    <a href="{{ url_for('reports.export_sales') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-download me-1"></i>Export</a>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Total Inventory</div>
+          <div class="kpi-value">{{ stats.total_inventory }}</div>
+          <div class="text-muted small">{{ stats.active_listings }} available</div>
+        </div>
+        <div class="kpi-icon" style="background:#e8f4fd;color:var(--primary)"><i class="bi bi-car-front"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="kpi-card accent">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">This Month Sales</div>
+          <div class="kpi-value">{{ stats.monthly_sales }}</div>
+          <div class="text-muted small">units sold</div>
+        </div>
+        <div class="kpi-icon" style="background:#fff8ec;color:var(--accent)"><i class="bi bi-graph-up-arrow"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="kpi-card success">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Monthly Revenue</div>
+          <div class="kpi-value" style="font-size:1.4rem">Rs {{ "{:,.0f}".format(stats.monthly_revenue) }}</div>
+          <div class="text-muted small">this month</div>
+        </div>
+        <div class="kpi-icon" style="background:#eafaf1;color:#28a745"><i class="bi bi-currency-exchange"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="kpi-card warning">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Active Pipeline</div>
+          <div class="kpi-value">{{ stats.pipeline_total }}</div>
+          <div class="text-muted small">deals in progress</div>
+        </div>
+        <div class="kpi-icon" style="background:#fff9e6;color:#ffc107"><i class="bi bi-kanban"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts row -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-8">
+    <div class="admin-card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-bar-chart me-2"></i>Monthly Sales & Revenue (Last 6 Months)</span>
+      </div>
+      <div class="card-body">
+        <canvas id="revenueChart" height="260"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="admin-card h-100">
+      <div class="card-header"><span><i class="bi bi-pie-chart me-2"></i>Inventory Status</span></div>
+      <div class="card-body d-flex flex-column align-items-center justify-content-center">
+        <canvas id="inventoryChart" style="max-height:220px"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="admin-card h-100">
+      <div class="card-header"><span><i class="bi bi-kanban me-2"></i>Sales Pipeline</span>
+        <a href="{{ url_for('sales.pipeline') }}" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body">
+        <canvas id="pipelineChart" style="max-height:220px"></canvas>
+        {% if stats.pipeline_data %}
+        <div class="mt-3">
+          {% for stage, count in stats.pipeline_data.items() %}
+          <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+            <span class="small text-capitalize">{{ stage.replace('_',' ') }}</span>
+            <span class="badge bg-primary rounded-pill">{{ count }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="admin-card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-clock-history me-2"></i>Recent Sales</span>
+        <a href="{{ url_for('sales.pipeline') }}" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <table class="table admin-table mb-0">
+          <thead><tr><th>Ref</th><th>Customer</th><th>Vehicle</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for sale in recent_sales %}
+            <tr>
+              <td><a href="{{ url_for('sales.view_sale', sale_id=sale.id) }}" class="fw-600">{{ sale.sale_ref }}</a></td>
+              <td>{{ sale.customer.name if sale.customer else '—' }}</td>
+              <td class="text-muted small">{{ sale.vehicle.make + ' ' + sale.vehicle.model if sale.vehicle else '—' }}</td>
+              <td>Rs {{ "{:,.0f}".format(sale.sale_price) if sale.sale_price else '—' }}</td>
+              <td><span class="status-badge bg-{{ 'success' if sale.status == 'delivered' else 'warning' }} text-{{ 'white' if sale.status == 'delivered' else 'dark' }}">{{ sale.status.replace('_',' ').title() }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center text-muted py-3">No sales yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Top Makes + Aging -->
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="admin-card">
+      <div class="card-header"><i class="bi bi-bar-chart-steps me-2"></i>Top Makes in Inventory</div>
+      <div class="card-body">
+        {% for make, count in top_makes %}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="fw-600 small">{{ make }}</span>
+          <div class="d-flex align-items-center gap-2">
+            <div class="progress flex-grow-1" style="height:8px;width:120px">
+              <div class="progress-bar" style="width:{{ (count / (top_makes[0][1] if top_makes else 1)) * 100 }}%;background:var(--primary)"></div>
+            </div>
+            <span class="small text-muted">{{ count }}</span>
+          </div>
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0">No inventory data</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="admin-card">
+      <div class="card-header"><i class="bi bi-calendar3 me-2"></i>Inventory Aging</div>
+      <div class="card-body">
+        <div class="row g-3 text-center">
+          {% for label, val, color in [('Under 30 days', stats.aging_30, 'success'), ('30 – 60 days', stats.aging_60, 'warning'), ('60 – 90 days', stats.aging_90, 'danger')] %}
+          <div class="col-4">
+            <div class="p-3 rounded-3" style="background:#f8f9fa">
+              <div class="fw-800 fs-3 text-{{ color }}">{{ val }}</div>
+              <div class="text-muted" style="font-size:0.72rem">{{ label }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const dashData = {
+  monthly_chart: {{ monthly_chart | tojson }},
+  pipeline_data: {{ pipeline_chart | tojson }},
+  inv_status: {{ inv_status_chart | tojson }},
+};
+initDashboardCharts(dashData);
+</script>
+{% endblock %}

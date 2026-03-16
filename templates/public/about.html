@@ -1,0 +1,55 @@
+{% extends 'public/base.html' %}
+{% block title %}About Us — {{ settings.company_name if settings else 'Sonnac Lanka' }}{% endblock %}
+{% block content %}
+<!-- Hero -->
+<div style="background:var(--primary);padding:4rem 0;color:#fff;text-align:center">
+  <div class="container">
+    <h1 class="fw-800 mb-2">About {{ settings.company_name if settings else 'Sonnac Lanka Enterprises' }}</h1>
+    <p class="opacity-75">Your trusted partner for quality pre-owned and imported vehicles in Sri Lanka</p>
+  </div>
+</div>
+
+<div class="container py-5">
+  <div class="row g-5 align-items-center">
+    <div class="col-lg-6">
+      <h2 class="section-title mb-4">Who We Are</h2>
+      <p class="text-muted">We are one of Sri Lanka's leading vehicle importers and dealers, specialising in quality pre-owned and brand-new imported vehicles. With over a decade of experience in the industry, we have built a reputation for transparency, reliability, and exceptional customer service.</p>
+      <p class="text-muted">Our dedicated team handles everything from LC-based vehicle imports, customs clearance, to delivery—ensuring a hassle-free experience for every customer.</p>
+      <div class="row g-3 mt-3">
+        {% for icon, num, lbl in [('car-front','500+','Vehicles Sold'),('people','300+','Happy Customers'),('award','10+','Years Experience'),('patch-check','100%','Transparent Deals')] %}
+        <div class="col-6">
+          <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3">
+            <i class="bi bi-{{ icon }} fs-2" style="color:var(--accent)"></i>
+            <div>
+              <div class="fw-800 fs-4" style="color:var(--primary)">{{ num }}</div>
+              <div class="text-muted small">{{ lbl }}</div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="p-4 rounded-3" style="background:var(--primary-dark);color:#fff">
+        <h5 class="mb-3" style="color:var(--accent)"><i class="bi bi-building me-2"></i>Our Services</h5>
+        <ul class="list-unstyled">
+          {% for svc in ['Imported Vehicle Sales (LC-based)','Pre-Owned Vehicle Sales','Vehicle LC & Documentation Assistance','Bank Leasing Arrangement','Vehicle Inspection & Grading','After-Sales Support & Servicing'] %}
+          <li class="py-2 border-bottom border-secondary d-flex align-items-center gap-2">
+            <i class="bi bi-check-circle-fill" style="color:var(--accent)"></i> {{ svc }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  {% if settings and settings.google_maps_embed %}
+  <div class="mt-5">
+    <h4 class="section-title mb-4">Find Us</h4>
+    <div class="ratio ratio-21x9 rounded-3 overflow-hidden">
+      {{ settings.google_maps_embed | safe }}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends 'admin/base.html' %}
+{% block title %}{{ 'Edit' if vehicle else 'New' }} Vehicle{% endblock %}
+{% block page_title %}{{ 'Edit' if vehicle else 'New' }} Vehicle{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ 'Edit Vehicle' if vehicle else 'Add New Vehicle' }}</h1>
+    <nav aria-label="breadcrumb"><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('inventory.list_vehicles') }}">Inventory</a></li>
+      <li class="breadcrumb-item active">{{ 'Edit' if vehicle else 'New' }}</li>
+    </ol></nav>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+  <div class="row g-4">
+    <!-- Left column -->
+    <div class="col-lg-8">
+
+      <!-- Vehicle Identity -->
+      <div class="admin-card mb-4">
+        <div class="card-header"><i class="bi bi-card-text me-2"></i>Vehicle Identity</div>
+        <div class="card-body">
+          <p class="form-section-title">Basic Information</p>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Make / Brand *</label>
+              <input type="text" class="form-control" name="make" value="{{ vehicle.make if vehicle else '' }}" required placeholder="e.g. Toyota">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Model *</label>
+              <input type="text" class="form-control" name="model" value="{{ vehicle.model if vehicle else '' }}" required placeholder="e.g. Aqua">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Year *</label>
+              <input type="number" class="form-control" name="year" value="{{ vehicle.year if vehicle else '' }}" required min="1990" max="2030">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Chassis Number</label>
+              <input type="text" class="form-control font-monospace" name="chassis_no" value="{{ vehicle.chassis_no if vehicle else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Engine Number</label>
+              <input type="text" class="form-control font-monospace" name="engine_no" value="{{ vehicle.engine_no if vehicle else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Registration Number</label>
+              <input type="text" class="form-control" name="reg_no" value="{{ vehicle.reg_no if vehicle else '' }}" placeholder="e.g. WP ABC-1234">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Colour</label>
+              <input type="text" class="form-control" name="color" value="{{ vehicle.color if vehicle else '' }}" placeholder="e.g. Pearl White">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Specifications -->
+      <div class="admin-card mb-4">
+        <div class="card-header"><i class="bi bi-list-check me-2"></i>Specifications</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Body Type</label>
+              <select class="form-select" name="body_type">
+                <option value="">Select…</option>
+                {% for bt in body_types %}<option value="{{ bt }}" {% if vehicle and vehicle.body_type == bt %}selected{% endif %}>{{ bt }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Fuel Type</label>
+              <select class="form-select" name="fuel_type">
+                <option value="">Select…</option>
+                {% for ft in fuel_types %}<option value="{{ ft }}" {% if vehicle and vehicle.fuel_type == ft %}selected{% endif %}>{{ ft }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Transmission</label>
+              <select class="form-select" name="transmission">
+                <option value="">Select…</option>
+                {% for tr in transmissions %}<option value="{{ tr }}" {% if vehicle and vehicle.transmission == tr %}selected{% endif %}>{{ tr }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Mileage (km)</label>
+              <input type="number" class="form-control" name="mileage" value="{{ vehicle.mileage if vehicle else '' }}" min="0">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Condition Grade</label>
+              <select class="form-select" name="condition_grade">
+                <option value="">Select…</option>
+                {% for c in conditions %}<option value="{{ c }}" {% if vehicle and vehicle.condition_grade == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Status</label>
+              <select class="form-select" name="status">
+                {% for s in statuses %}<option value="{{ s }}" {% if vehicle and vehicle.status == s %}selected{% endif %}>{{ s.replace('_',' ').title() }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pricing -->
+      <div class="admin-card mb-4">
+        <div class="card-header"><i class="bi bi-tag me-2"></i>Pricing & Listing</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Selling Price (Rs)</label>
+              <div class="input-group">
+                <span class="input-group-text">Rs</span>
+                <input type="number" class="form-control" name="selling_price" value="{{ vehicle.selling_price if vehicle else '' }}" step="0.01" min="0">
+              </div>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="is_featured" id="is_featured" {% if vehicle and vehicle.is_featured %}checked{% endif %}>
+                <label class="form-check-label" for="is_featured">Featured Listing</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right column: Images & Docs -->
+    <div class="col-lg-4">
+      <!-- Images -->
+      <div class="admin-card mb-4">
+        <div class="card-header"><i class="bi bi-images me-2"></i>Vehicle Images</div>
+        <div class="card-body">
+          {% if vehicle and vehicle.images %}
+          <div class="row g-2 mb-3">
+            {% for img in vehicle.images %}
+            <div class="col-4">
+              <div class="position-relative">
+                <img src="{{ url_for('static', filename='uploads/vehicles/' + img.filename) }}" class="img-thumbnail w-100" style="height:80px;object-fit:cover">
+                <div class="d-flex gap-1 mt-1">
+                  {% if not img.is_primary %}
+                  <a href="{{ url_for('inventory.set_primary_image', vehicle_id=vehicle.id, img_id=img.id) }}" class="btn btn-xs btn-outline-primary" style="font-size:0.65rem;padding:1px 5px" title="Set Primary"><i class="bi bi-star"></i></a>
+                  {% else %}
+                  <span class="badge bg-warning text-dark" style="font-size:0.65rem">Primary</span>
+                  {% endif %}
+                  <a href="{{ url_for('inventory.delete_image', vehicle_id=vehicle.id, img_id=img.id) }}" class="btn btn-xs btn-outline-danger" style="font-size:0.65rem;padding:1px 5px"
+                     data-confirm="Delete this image?" title="Delete"><i class="bi bi-trash"></i></a>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <label class="form-label small">Upload New Images</label>
+          <input type="file" class="form-control form-control-sm" name="images" multiple accept="image/*">
+          <div class="form-text">JPEG, PNG. Max 16MB each. First image becomes primary if none exists.</div>
+        </div>
+      </div>
+
+      <!-- Documents -->
+      <div class="admin-card mb-4">
+        <div class="card-header"><i class="bi bi-file-earmark-text me-2"></i>Documents</div>
+        <div class="card-body">
+          {% if vehicle and vehicle.documents %}
+          <ul class="list-group list-group-flush mb-3">
+            {% for doc in vehicle.documents %}
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-1">
+              <span class="small"><i class="bi bi-file-pdf text-danger me-1"></i>{{ doc.doc_type.replace('_',' ').title() }}</span>
+              <a href="{{ url_for('inventory.delete_document', vehicle_id=vehicle.id, doc_id=doc.id) }}" class="btn btn-xs btn-outline-danger" style="font-size:0.65rem;padding:1px 6px" data-confirm="Delete this document?"><i class="bi bi-trash"></i></a>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          <label class="form-label small">Upload Document</label>
+          <select class="form-select form-select-sm mb-2" name="doc_type">
+            {% for dt in ['lc_document','customs_clearance','registration','insurance','test_certificate','other'] %}
+            <option value="{{ dt }}">{{ dt.replace('_',' ').title() }}</option>
+            {% endfor %}
+          </select>
+          <input type="file" class="form-control form-control-sm" name="document" accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+      </div>
+
+      <!-- Save -->
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary py-2">
+          <i class="bi bi-check-circle me-2"></i>{{ 'Update Vehicle' if vehicle else 'Save Vehicle' }}
+        </button>
+        <a href="{{ url_for('inventory.list_vehicles') }}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

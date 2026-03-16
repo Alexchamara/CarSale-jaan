@@ -1,0 +1,92 @@
+{% extends 'admin/base.html' %}
+{% block title %}Quotations{% endblock %}
+{% block page_title %}Quotations & Invoices{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-file-earmark-text me-2"></i>Quotations & Invoices</h1>
+  </div>
+  {% if current_user.has_permission('quotations','create') %}
+  <a href="{{ url_for('quotations.new_quotation') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>New Quotation</a>
+  {% endif %}
+</div>
+
+<!-- Filters -->
+<div class="admin-card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <input type="text" class="form-control form-control-sm" name="q" placeholder="Quote no., customer…" value="{{ request.args.get('q','') }}">
+      </div>
+      <div class="col-md-2">
+        <select class="form-select form-select-sm" name="doc_type">
+          <option value="">All Types</option>
+          <option value="quotation" {% if request.args.get('doc_type') == 'quotation' %}selected{% endif %}>Quotation</option>
+          <option value="proforma_invoice" {% if request.args.get('doc_type') == 'proforma_invoice' %}selected{% endif %}>Proforma Invoice</option>
+          <option value="tax_invoice" {% if request.args.get('doc_type') == 'tax_invoice' %}selected{% endif %}>Tax Invoice</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select form-select-sm" name="status">
+          <option value="">All Status</option>
+          {% for s in ['draft','sent','accepted','invoiced','paid'] %}
+          <option value="{{ s }}" {% if request.args.get('status') == s %}selected{% endif %}>{{ s.title() }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-1">
+        <button class="btn btn-primary btn-sm w-100"><i class="bi bi-search me-1"></i>Filter</button>
+        <a href="{{ url_for('quotations.list_quotations') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="card-body p-0">
+    <table class="table admin-table mb-0">
+      <thead>
+        <tr>
+          <th>Quote No.</th>
+          <th>Type</th>
+          <th>Customer</th>
+          <th>Vehicle</th>
+          <th>Total</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for q in quotations %}
+        {% set status_col = {'draft':'secondary','sent':'info','accepted':'primary','invoiced':'warning','paid':'success'} %}
+        <tr>
+          <td><a href="{{ url_for('quotations.view_quotation', quote_id=q.id) }}" class="fw-700 text-primary">{{ q.quote_no }}</a></td>
+          <td><span class="badge bg-light text-dark border" style="font-size:0.72rem">{{ q.doc_type.replace('_',' ').title() }}</span></td>
+          <td>{{ q.customer.name if q.customer else '—' }}</td>
+          <td class="text-muted small">{{ q.vehicle.make ~ ' ' ~ q.vehicle.model if q.vehicle else '—' }}</td>
+          <td class="fw-600">{{ q.currency or 'Rs' }} {{ "{:,.2f}".format(q.total) if q.total else '0.00' }}</td>
+          <td class="text-muted small">{{ q.created_at.strftime('%d %b %Y') if q.created_at else '—' }}</td>
+          <td><span class="status-badge bg-{{ status_col.get(q.status,'secondary') }} text-white">{{ q.status.title() }}</span></td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{{ url_for('quotations.view_quotation', quote_id=q.id) }}" class="btn btn-outline-primary action-btn" title="View"><i class="bi bi-eye"></i></a>
+              <a href="{{ url_for('quotations.download_pdf', quote_id=q.id) }}" class="btn btn-outline-danger action-btn" title="PDF"><i class="bi bi-file-pdf"></i></a>
+              {% if current_user.has_permission('quotations','edit') and q.status == 'draft' %}
+              <a href="{{ url_for('quotations.edit_quotation', quote_id=q.id) }}" class="btn btn-outline-secondary action-btn" title="Edit"><i class="bi bi-pencil"></i></a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="text-center py-4 text-muted">
+          <i class="bi bi-file-earmark-text fs-1 d-block mb-2"></i>No quotations yet.
+          <a href="{{ url_for('quotations.new_quotation') }}">Create the first one.</a>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

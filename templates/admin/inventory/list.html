@@ -1,0 +1,129 @@
+{% extends 'admin/base.html' %}
+{% block title %}Inventory{% endblock %}
+{% block page_title %}Vehicle Inventory{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-car-front me-2"></i>Vehicle Inventory</h1>
+    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item active">Inventory</li></ol></nav>
+  </div>
+  <a href="{{ url_for('inventory.new_vehicle') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Add Vehicle</a>
+</div>
+
+<!-- Filters -->
+<div class="admin-card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <input type="text" class="form-control form-control-sm" name="q" placeholder="Search chassis, make, model…" value="{{ request.args.get('q','') }}">
+      </div>
+      <div class="col-md-2">
+        <select class="form-select form-select-sm" name="status">
+          <option value="">All Status</option>
+          {% for s in statuses %}<option value="{{ s }}" {% if request.args.get('status') == s %}selected{% endif %}>{{ s.title() }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select form-select-sm" name="make">
+          <option value="">All Makes</option>
+          {% for m in makes %}<option value="{{ m }}" {% if request.args.get('make') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select form-select-sm" name="body_type">
+          <option value="">All Types</option>
+          {% for bt in body_types %}<option value="{{ bt }}" {% if request.args.get('body_type') == bt %}selected{% endif %}>{{ bt }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-1">
+        <input type="number" class="form-control form-control-sm" name="year" placeholder="Year" value="{{ request.args.get('year','') }}">
+      </div>
+      <div class="col-md-2 d-flex gap-1">
+        <button class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
+        <a href="{{ url_for('inventory.list_vehicles') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+        {% if current_user.has_permission('inventory','archive') %}
+        <a href="{{ url_for('inventory.list_vehicles', show_archived=1) }}" class="btn btn-outline-warning btn-sm {% if request.args.get('show_archived') %}active{% endif %}">Archived</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="admin-card">
+  <div class="card-body p-0">
+    <table class="table admin-table mb-0">
+      <thead>
+        <tr>
+          <th style="width:70px">Image</th>
+          <th>Vehicle</th>
+          <th>Chassis No.</th>
+          <th>Year</th>
+          <th>Fuel / Trans</th>
+          <th>Mileage</th>
+          <th>Selling Price</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in vehicles %}
+        <tr>
+          <td>
+            {% if v.images %}
+              {% set img = v.images | selectattr('is_primary') | first or v.images[0] %}
+              <img src="{{ url_for('static', filename='uploads/vehicles/' + img.filename) }}" class="admin-vehicle-img" alt="">
+            {% else %}
+              <div class="admin-vehicle-img d-flex align-items-center justify-content-center bg-light rounded" style="color:#aab">
+                <i class="bi bi-car-front"></i>
+              </div>
+            {% endif %}
+          </td>
+          <td>
+            <div class="fw-600">{{ v.make }} {{ v.model }}</div>
+            <div class="text-muted small">{{ v.color or '' }}{% if v.body_type %} · {{ v.body_type }}{% endif %}</div>
+            {% if v.is_featured %}<span class="badge bg-warning text-dark" style="font-size:0.65rem">Featured</span>{% endif %}
+          </td>
+          <td class="font-monospace small">{{ v.chassis_no or '—' }}</td>
+          <td>{{ v.year }}</td>
+          <td class="small">{{ v.fuel_type or '—' }}<br><span class="text-muted">{{ v.transmission or '—' }}</span></td>
+          <td class="small">{{ "{:,}".format(v.mileage) ~ ' km' if v.mileage else '—' }}</td>
+          <td class="fw-600">{% if v.selling_price %}Rs {{ "{:,.0f}".format(v.selling_price) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td>
+            {% set status_colors = {'available':'success','reserved':'warning','sold':'secondary','under_inspection':'info'} %}
+            <span class="status-badge bg-{{ status_colors.get(v.status,'secondary') }} text-white">{{ v.status.replace('_',' ').title() }}</span>
+          </td>
+          <td>
+            <div class="d-flex gap-1 flex-wrap">
+              <a href="{{ url_for('inventory.view_vehicle', vehicle_id=v.id) }}" class="btn btn-outline-primary action-btn" title="View"><i class="bi bi-eye"></i></a>
+              {% if current_user.has_permission('inventory','edit') %}
+              <a href="{{ url_for('inventory.edit_vehicle', vehicle_id=v.id) }}" class="btn btn-outline-secondary action-btn" title="Edit"><i class="bi bi-pencil"></i></a>
+              <a href="{{ url_for('costing.cost_sheet', vehicle_id=v.id) }}" class="btn btn-outline-info action-btn" title="Costing"><i class="bi bi-calculator"></i></a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="text-center text-muted py-4">
+          <i class="bi bi-car-front fs-2 d-block mb-2"></i>
+          No vehicles found. <a href="{{ url_for('inventory.new_vehicle') }}">Add your first vehicle.</a>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pagination and pagination.pages > 1 %}
+  <div class="card-body border-top">
+    <nav><ul class="pagination pagination-sm mb-0 justify-content-center">
+      {% if pagination.has_prev %}<li class="page-item"><a class="page-link" href="?page={{ pagination.prev_num }}&{{ request.query_string.decode() }}"><i class="bi bi-chevron-left"></i></a></li>{% endif %}
+      {% for p in pagination.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+        {% if p %}<li class="page-item {% if p == pagination.page %}active{% endif %}"><a class="page-link" href="?page={{ p }}&{{ request.query_string.decode() }}">{{ p }}</a></li>
+        {% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+      {% endfor %}
+      {% if pagination.has_next %}<li class="page-item"><a class="page-link" href="?page={{ pagination.next_num }}&{{ request.query_string.decode() }}"><i class="bi bi-chevron-right"></i></a></li>{% endif %}
+    </ul></nav>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

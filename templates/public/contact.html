@@ -1,0 +1,88 @@
+{% extends 'public/base.html' %}
+{% block title %}Contact Us — {{ settings.company_name if settings else 'Sonnac Lanka' }}{% endblock %}
+{% block content %}
+<div style="background:var(--primary);padding:4rem 0;color:#fff;text-align:center">
+  <div class="container">
+    <h1 class="fw-800 mb-2">Contact Us</h1>
+    <p class="opacity-75">We'd love to hear from you. Reach us through any of the channels below.</p>
+  </div>
+</div>
+<div class="container py-5">
+  <div class="row g-5">
+    <!-- Contact Form -->
+    <div class="col-lg-7">
+      <div class="admin-card">
+        <div class="card-header"><i class="bi bi-envelope me-2"></i>Send Us a Message</div>
+        <div class="card-body">
+          <form method="post">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Your Name *</label>
+                <input type="text" class="form-control" name="name" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone Number *</label>
+                <input type="tel" class="form-control" name="phone" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Email Address</label>
+                <input type="email" class="form-control" name="email">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Subject</label>
+                <select class="form-select" name="subject">
+                  <option>Vehicle Inquiry</option>
+                  <option>Leasing Inquiry</option>
+                  <option>After-Sales Support</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Message *</label>
+                <textarea class="form-control" name="message" rows="5" required placeholder="Tell us how we can help you…"></textarea>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary px-4">
+                  <i class="bi bi-send me-2"></i>Send Message
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Contact Info -->
+    <div class="col-lg-5">
+      <h5 class="fw-700 mb-4" style="color:var(--primary)">Get In Touch</h5>
+      {% if settings %}
+        {% if settings.address %}
+        <div class="d-flex gap-3 mb-3">
+          <div style="width:40px;height:40px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0"><i class="bi bi-geo-alt-fill"></i></div>
+          <div><div class="fw-600 small">Address</div><div class="text-muted small">{{ settings.address }}</div></div>
+        </div>
+        {% endif %}
+        {% if settings.phone %}
+        <div class="d-flex gap-3 mb-3">
+          <div style="width:40px;height:40px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0"><i class="bi bi-telephone-fill"></i></div>
+          <div><div class="fw-600 small">Phone</div><a href="tel:{{ settings.phone }}" class="text-muted small">{{ settings.phone }}</a></div>
+        </div>
+        {% endif %}
+        {% if settings.email %}
+        <div class="d-flex gap-3 mb-3">
+          <div style="width:40px;height:40px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0"><i class="bi bi-envelope-fill"></i></div>
+          <div><div class="fw-600 small">Email</div><a href="mailto:{{ settings.email }}" class="text-muted small">{{ settings.email }}</a></div>
+        </div>
+        {% endif %}
+        {% if settings.whatsapp_number %}
+        <a href="https://wa.me/{{ settings.whatsapp_number }}" target="_blank" class="btn btn-whatsapp mt-3 w-100">
+          <i class="bi bi-whatsapp me-2"></i>Chat on WhatsApp
+        </a>
+        {% endif %}
+        {% if settings.google_maps_embed %}
+        <div class="mt-4 ratio ratio-4x3 rounded-3 overflow-hidden">{{ settings.google_maps_embed | safe }}</div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

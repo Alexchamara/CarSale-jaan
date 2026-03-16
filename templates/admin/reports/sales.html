@@ -1,0 +1,79 @@
+{% extends 'admin/base.html' %}
+{% block title %}Sales Report{% endblock %}
+{% block page_title %}Sales Report{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-graph-up me-2"></i>Sales Report</h1>
+  <a href="{{ url_for('reports.export_sales') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-file-earmark-excel me-1"></i>Export Excel</a>
+</div>
+<!-- Date Filters -->
+<div class="admin-card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small">From</label>
+        <input type="date" class="form-control form-control-sm" name="date_from" value="{{ request.args.get('date_from','') }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">To</label>
+        <input type="date" class="form-control form-control-sm" name="date_to" value="{{ request.args.get('date_to','') }}">
+      </div>
+      <div class="col-md-2">
+        <select class="form-select form-select-sm" name="salesperson">
+          <option value="">All Salespeople</option>
+          {% for sp in salespeople %}
+          <option value="{{ sp.id }}" {% if request.args.get('salesperson') == sp.id|string %}selected{% endif %}>{{ sp.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-1">
+        <button class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Filter</button>
+        <a href="{{ url_for('reports.sales_report') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- Summary KPIs -->
+<div class="row g-3 mb-4">
+  {% for label, val, color in [
+    ('Total Sales', summary.total_sales, 'primary'),
+    ('Total Revenue', 'Rs {:,.0f}'.format(summary.total_revenue), 'success'),
+    ('Average Sale Price', 'Rs {:,.0f}'.format(summary.avg_sale_price), 'info'),
+    ('Total Collected', 'Rs {:,.0f}'.format(summary.total_collected), 'warning'),
+  ] %}
+  <div class="col-md-3">
+    <div class="kpi-card {{ color }}">
+      <div class="kpi-label">{{ label }}</div>
+      <div class="kpi-value" style="font-size:1.5rem">{{ val }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<!-- Sales Table -->
+<div class="admin-card">
+  <div class="card-header"><i class="bi bi-table me-2"></i>Sales Transactions</div>
+  <div class="card-body p-0">
+    <table class="table admin-table mb-0">
+      <thead><tr><th>Sale Ref</th><th>Date</th><th>Customer</th><th>Vehicle</th><th>Salesperson</th><th>Sale Price</th><th>Collected</th><th>Balance</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for sale in sales %}
+        {% set sc = {'lead':'secondary','negotiation':'info','deposit_paid':'primary','full_payment':'warning','delivered':'success'} %}
+        <tr>
+          <td><a href="{{ url_for('sales.view_sale', sale_id=sale.id) }}" class="fw-600">{{ sale.sale_ref }}</a></td>
+          <td class="text-muted small">{{ sale.created_at.strftime('%d %b %Y') if sale.created_at else '—' }}</td>
+          <td>{{ sale.customer.name if sale.customer else '—' }}</td>
+          <td class="small text-muted">{{ sale.vehicle.make ~ ' ' ~ sale.vehicle.model if sale.vehicle else '—' }}</td>
+          <td class="small">{{ sale.salesperson.name if sale.salesperson else '—' }}</td>
+          <td class="fw-600">Rs {{ "{:,.0f}".format(sale.sale_price) if sale.sale_price else '—' }}</td>
+          <td class="text-success fw-600">Rs {{ "{:,.0f}".format(sale.total_paid()) }}</td>
+          <td class="{{ 'text-danger' if sale.balance_due() > 0 else 'text-success' }}">Rs {{ "{:,.0f}".format(sale.balance_due()) }}</td>
+          <td><span class="status-badge bg-{{ sc.get(sale.status,'secondary') }} text-white">{{ sale.status.replace('_',' ').title() }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="text-center py-4 text-muted">No sales in this period.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

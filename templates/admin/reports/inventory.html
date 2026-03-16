@@ -1,0 +1,52 @@
+{% extends 'admin/base.html' %}
+{% block title %}Inventory Report{% endblock %}
+{% block page_title %}Inventory Report{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-clipboard-data me-2"></i>Inventory Report</h1>
+</div>
+<div class="row g-3 mb-4">
+  {% for label, val, color in [
+    ('Total Vehicles', stats.total, 'primary'),
+    ('Available', stats.available, 'success'),
+    ('Reserved', stats.reserved, 'warning'),
+    ('Sold', stats.sold, 'secondary'),
+  ] %}
+  <div class="col-md-3">
+    <div class="kpi-card {{ color }}">
+      <div class="kpi-label">{{ label }}</div>
+      <div class="kpi-value" style="font-size:1.75rem">{{ val }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<div class="admin-card">
+  <div class="card-header"><i class="bi bi-table me-2"></i>Inventory List</div>
+  <div class="card-body p-0">
+    <table class="table admin-table mb-0">
+      <thead><tr><th>Vehicle</th><th>Chassis No.</th><th>Year</th><th>Fuel</th><th>Mileage</th><th>Landed Cost</th><th>Selling Price</th><th>Margin</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for v in vehicles %}
+        {% set margin = ((v.selling_price - v.cost_sheet.total_landed_cost) / v.cost_sheet.total_landed_cost * 100) if v.cost_sheet and v.cost_sheet.total_landed_cost and v.selling_price else None %}
+        <tr>
+          <td><a href="{{ url_for('inventory.view_vehicle', vehicle_id=v.id) }}" class="fw-600">{{ v.make }} {{ v.model }}</a></td>
+          <td class="font-monospace small">{{ v.chassis_no or '—' }}</td>
+          <td>{{ v.year }}</td>
+          <td class="small">{{ v.fuel_type or '—' }}</td>
+          <td class="small">{{ "{:,} km".format(v.mileage) if v.mileage else '—' }}</td>
+          <td class="small">{% if v.cost_sheet and v.cost_sheet.total_landed_cost %}Rs {{ "{:,.0f}".format(v.cost_sheet.total_landed_cost) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td class="fw-600">{% if v.selling_price %}Rs {{ "{:,.0f}".format(v.selling_price) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td>{% if margin is not none %}<span class="{{ 'text-success' if margin >= 0 else 'text-danger' }} fw-600 small">{{ "{:.1f}".format(margin) }}%</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td>
+            {% set sc = {'available':'success','reserved':'warning','sold':'secondary','under_inspection':'info'} %}
+            <span class="status-badge bg-{{ sc.get(v.status,'secondary') }} text-white">{{ v.status.replace('_',' ').title() }}</span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="text-center py-4 text-muted">No vehicles in inventory.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

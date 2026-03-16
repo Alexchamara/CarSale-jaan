@@ -1,0 +1,141 @@
+{% extends 'admin/base.html' %}
+{% block title %}System Settings{% endblock %}
+{% block page_title %}System Settings{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-gear me-2"></i>System Settings</h1>
+</div>
+<form method="post" enctype="multipart/form-data">
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <!-- Company Info -->
+      <div class="admin-card mb-4">
+        <div class="card-header"><i class="bi bi-building me-2"></i>Company Information</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Company Name *</label>
+              <input type="text" class="form-control" name="company_name" value="{{ settings.company_name if settings else '' }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Logo</label>
+              {% if settings and settings.logo %}
+              <div class="mb-2">
+                <img src="{{ url_for('static', filename='uploads/logos/' + settings.logo) }}" height="50" class="border rounded p-1">
+              </div>
+              {% endif %}
+              <input type="file" class="form-control form-control-sm" name="logo" accept="image/*">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Address</label>
+              <textarea class="form-control" name="address" rows="2">{{ settings.address if settings else '' }}</textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Phone</label>
+              <input type="text" class="form-control" name="phone" value="{{ settings.phone if settings else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" name="email" value="{{ settings.email if settings else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">WhatsApp Number</label>
+              <input type="text" class="form-control" name="whatsapp_number" value="{{ settings.whatsapp_number if settings else '' }}" placeholder="+94771234567">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Currency</label>
+              <select class="form-select" name="currency">
+                {% for c in ['LKR','USD','EUR','GBP','JPY','AED'] %}
+                <option value="{{ c }}" {% if settings and settings.currency == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Numbering Prefixes -->
+      <div class="admin-card mb-4">
+        <div class="card-header"><i class="bi bi-hash me-2"></i>Document Numbering</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Quotation Prefix</label>
+              <input type="text" class="form-control" name="quote_prefix" value="{{ settings.quote_prefix if settings else 'QT' }}" placeholder="QT">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Invoice Prefix</label>
+              <input type="text" class="form-control" name="invoice_prefix" value="{{ settings.invoice_prefix if settings else 'INV' }}" placeholder="INV">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Proforma Prefix</label>
+              <input type="text" class="form-control" name="pi_prefix" value="{{ settings.pi_prefix if settings else 'PI' }}" placeholder="PI">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Default Tax Rate (%)</label>
+              <div class="input-group">
+                <input type="number" class="form-control" name="tax_rate" value="{{ settings.tax_rate if settings else 0 }}" step="0.1" min="0" max="100">
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bank Details -->
+      <div class="admin-card mb-4">
+        <div class="card-header"><i class="bi bi-bank me-2"></i>Bank Details (for invoices)</div>
+        <div class="card-body">
+          <textarea class="form-control" name="bank_details" rows="4" placeholder="Bank Name, Account Number, Branch, etc.">{{ settings.bank_details if settings else '' }}</textarea>
+        </div>
+      </div>
+
+      <!-- Terms -->
+      <div class="admin-card mb-4">
+        <div class="card-header"><i class="bi bi-file-earmark-text me-2"></i>Default Terms & Conditions</div>
+        <div class="card-body">
+          <textarea class="form-control" name="terms_and_conditions" rows="6" placeholder="Terms and conditions to appear on quotations and invoices…">{{ settings.terms_and_conditions if settings else '' }}</textarea>
+        </div>
+      </div>
+
+      <!-- Social & Maps -->
+      <div class="admin-card mb-4">
+        <div class="card-header"><i class="bi bi-share me-2"></i>Social Media & Maps</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-facebook me-1 text-primary"></i>Facebook URL</label>
+              <input type="url" class="form-control" name="facebook_url" value="{{ settings.facebook_url if settings else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-instagram me-1 text-danger"></i>Instagram URL</label>
+              <input type="url" class="form-control" name="instagram_url" value="{{ settings.instagram_url if settings else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-youtube me-1 text-danger"></i>YouTube URL</label>
+              <input type="url" class="form-control" name="youtube_url" value="{{ settings.youtube_url if settings else '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Google Maps Embed Code</label>
+              <textarea class="form-control font-monospace" name="google_maps_embed" rows="3" placeholder="Paste the full Google Maps iframe embed code here…">{{ settings.google_maps_embed if settings else '' }}</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="admin-card position-sticky" style="top:80px">
+        <div class="card-body">
+          <button type="submit" class="btn btn-primary w-100 py-2 mb-2">
+            <i class="bi bi-save me-2"></i>Save Settings
+          </button>
+          <a href="{{ url_for('settings.audit_log') }}" class="btn btn-outline-secondary w-100">
+            <i class="bi bi-journal-text me-2"></i>View Audit Log
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

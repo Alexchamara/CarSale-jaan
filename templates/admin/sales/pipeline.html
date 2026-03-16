@@ -1,0 +1,95 @@
+{% extends 'admin/base.html' %}
+{% block title %}Sales Pipeline{% endblock %}
+{% block page_title %}Sales Pipeline{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-kanban me-2"></i>Sales Pipeline</h1>
+  </div>
+  {% if current_user.has_permission('sales','create') %}
+  <a href="{{ url_for('sales.new_sale') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Record Sale</a>
+  {% endif %}
+</div>
+
+<!-- Pipeline Board -->
+<div class="pipeline-board d-flex gap-3 pb-3">
+  {% set stages = [
+    ('lead', 'Lead', 'secondary'),
+    ('negotiation', 'Negotiation', 'info'),
+    ('deposit_paid', 'Deposit Paid', 'primary'),
+    ('full_payment', 'Full Payment', 'warning'),
+    ('delivered', 'Delivered', 'success'),
+  ] %}
+  {% for stage, label, color in stages %}
+  <div class="pipeline-column" style="min-width:210px">
+    <div class="pipeline-column-header">
+      <span class="text-{{ color if color != 'warning' else 'dark' }}">{{ label }}</span>
+      <span class="badge bg-{{ color }} text-{{ 'dark' if color == 'warning' else 'white' }} rounded-pill">
+        {{ pipeline.get(stage, [])|length }}
+      </span>
+    </div>
+    {% for sale in pipeline.get(stage, []) %}
+    <a href="{{ url_for('sales.view_sale', sale_id=sale.id) }}" class="text-decoration-none">
+      <div class="pipeline-card" style="border-left-color:var(--{{ 'accent' if color == 'warning' else 'primary' if color == 'primary' else color }})">
+        <div class="fw-700 small mb-1 text-dark">{{ sale.sale_ref }}</div>
+        <div class="text-muted small mb-1">{{ sale.customer.name if sale.customer else '—' }}</div>
+        <div class="small mb-1" style="color:var(--primary)">
+          {{ sale.vehicle.make ~ ' ' ~ sale.vehicle.model if sale.vehicle else '—' }}
+        </div>
+        {% if sale.sale_price %}
+        <div class="small fw-600" style="color:var(--accent)">Rs {{ "{:,.0f}".format(sale.sale_price) }}</div>
+        {% endif %}
+        {% if sale.salesperson %}
+        <div class="text-muted" style="font-size:0.7rem;margin-top:0.25rem">
+          <i class="bi bi-person me-1"></i>{{ sale.salesperson.name }}
+        </div>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+    {% if not pipeline.get(stage, []) %}
+    <div class="text-center text-muted py-3" style="font-size:0.75rem">No deals</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Table view -->
+<div class="admin-card mt-4">
+  <div class="card-header"><i class="bi bi-table me-2"></i>All Sales</div>
+  <div class="card-body p-0">
+    <table class="table admin-table mb-0">
+      <thead>
+        <tr><th>Sale Ref</th><th>Customer</th><th>Vehicle</th><th>Sale Price</th><th>Deposit</th><th>Balance</th><th>Stage</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for sale in all_sales %}
+        {% set sc = {'lead':'secondary','negotiation':'info','deposit_paid':'primary','full_payment':'warning','delivered':'success'} %}
+        <tr>
+          <td><a href="{{ url_for('sales.view_sale', sale_id=sale.id) }}" class="fw-700">{{ sale.sale_ref }}</a></td>
+          <td>{{ sale.customer.name if sale.customer else '—' }}</td>
+          <td class="small text-muted">{{ sale.vehicle.make ~ ' ' ~ sale.vehicle.model if sale.vehicle else '—' }}</td>
+          <td class="fw-600">{% if sale.sale_price %}Rs {{ "{:,.0f}".format(sale.sale_price) }}{% else %}—{% endif %}</td>
+          <td class="small">{% if sale.deposit %}Rs {{ "{:,.0f}".format(sale.deposit) }}{% else %}—{% endif %}</td>
+          <td class="small {% if sale.balance_due() > 0 %}text-danger fw-600{% else %}text-success{% endif %}">
+            {% if sale.sale_price %}Rs {{ "{:,.0f}".format(sale.balance_due()) }}{% else %}—{% endif %}
+          </td>
+          <td><span class="status-badge bg-{{ sc.get(sale.status,'secondary') }} text-white">{{ sale.status.replace('_',' ').title() }}</span></td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{{ url_for('sales.view_sale', sale_id=sale.id) }}" class="btn btn-outline-primary action-btn"><i class="bi bi-eye"></i></a>
+              {% if current_user.has_permission('sales','edit') %}
+              <a href="{{ url_for('sales.edit_sale', sale_id=sale.id) }}" class="btn btn-outline-secondary action-btn"><i class="bi bi-pencil"></i></a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="text-center py-4 text-muted">No sales recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

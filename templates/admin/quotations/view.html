@@ -1,0 +1,172 @@
+{% extends 'admin/base.html' %}
+{% block title %}{{ quotation.quote_no }}{% endblock %}
+{% block page_title %}{{ quotation.quote_no }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ quotation.quote_no }}</h1>
+    <nav aria-label="breadcrumb"><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('quotations.list_quotations') }}">Quotations</a></li>
+      <li class="breadcrumb-item active">{{ quotation.quote_no }}</li>
+    </ol></nav>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('quotations.download_pdf', quote_id=quotation.id) }}" class="btn btn-outline-danger btn-sm" target="_blank">
+      <i class="bi bi-file-pdf me-1"></i>Download PDF
+    </a>
+    {% if current_user.has_permission('quotations','edit') and quotation.status == 'draft' %}
+    <a href="{{ url_for('quotations.edit_quotation', quote_id=quotation.id) }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-pencil me-1"></i>Edit
+    </a>
+    {% endif %}
+    {% if quotation.doc_type == 'quotation' and quotation.status not in ['cancelled'] %}
+    <form method="post" action="{{ url_for('quotations.convert_document', quote_id=quotation.id, doc_type='proforma_invoice') }}" class="d-inline">
+      <button type="submit" class="btn btn-primary btn-sm">
+        <i class="bi bi-arrow-right-circle me-1"></i>Convert to Proforma Invoice
+      </button>
+    </form>
+    <form method="post" action="{{ url_for('quotations.convert_document', quote_id=quotation.id, doc_type='tax_invoice') }}" class="d-inline">
+      <button type="submit" class="btn btn-success btn-sm">
+        <i class="bi bi-receipt me-1"></i>Convert to Tax Invoice
+      </button>
+    </form>
+    {% endif %}
+    {% if quotation.doc_type == 'proforma_invoice' and quotation.status not in ['cancelled','paid'] %}
+    <form method="post" action="{{ url_for('quotations.convert_document', quote_id=quotation.id, doc_type='tax_invoice') }}" class="d-inline">
+      <button type="submit" class="btn btn-success btn-sm">
+        <i class="bi bi-receipt me-1"></i>Convert to Tax Invoice
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <!-- Document Preview card -->
+    <div class="admin-card mb-4">
+      <div class="card-body">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h4 class="fw-800" style="color:var(--primary)">{{ quotation.doc_type.replace('_',' ').upper() }}</h4>
+            <div class="text-muted small">{{ quotation.quote_no }} · v{{ quotation.version or 1 }}</div>
+          </div>
+          <div class="text-end">
+            <div class="fw-600">{{ settings.company_name if settings else 'Sonnac Lanka Enterprises' }}</div>
+            {% if settings %}<div class="text-muted small">{{ settings.address }}</div>{% endif %}
+          </div>
+        </div>
+        <hr>
+        <!-- Bill to / Vehicle -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="text-muted small fw-700 mb-1">BILL TO</div>
+            {% if quotation.customer %}
+            <div class="fw-600">{{ quotation.customer.name }}</div>
+            <div class="small text-muted">{{ quotation.customer.phone }}</div>
+            <div class="small text-muted">{{ quotation.customer.email }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6 text-md-end">
+            {% if quotation.vehicle %}
+            <div class="text-muted small fw-700 mb-1">VEHICLE</div>
+            <div class="fw-600">{{ quotation.vehicle.year }} {{ quotation.vehicle.make }} {{ quotation.vehicle.model }}</div>
+            {% if quotation.vehicle.chassis_no %}<div class="font-monospace small text-muted">{{ quotation.vehicle.chassis_no }}</div>{% endif %}
+            {% endif %}
+            <div class="text-muted small mt-1">Date: {{ quotation.created_at.strftime('%d %B %Y') if quotation.created_at else '—' }}</div>
+          </div>
+        </div>
+        <!-- Items Table -->
+        <table class="table admin-table mb-3">
+          <thead>
+            <tr><th>#</th><th>Description</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Total</th></tr>
+          </thead>
+          <tbody>
+            {% for item in quotation.items %}
+            <tr>
+              <td class="text-muted small">{{ loop.index }}</td>
+              <td>{{ item.description }}</td>
+              <td class="text-end">{{ item.quantity }}</td>
+              <td class="text-end">{{ quotation.currency or 'Rs' }} {{ "{:,.2f}".format(item.unit_price) }}</td>
+              <td class="text-end fw-600">{{ quotation.currency or 'Rs' }} {{ "{:,.2f}".format(item.total) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <!-- Totals -->
+        <div class="row justify-content-end">
+          <div class="col-md-5">
+            <table class="table table-sm mb-0">
+              <tr><td class="text-muted">Subtotal</td><td class="text-end fw-600">{{ quotation.currency or 'Rs' }} {{ "{:,.2f}".format(quotation.subtotal or 0) }}</td></tr>
+              {% if quotation.discount %}<tr><td class="text-muted">Discount</td><td class="text-end">— {{ quotation.currency or 'Rs' }} {{ "{:,.2f}".format(quotation.discount) }}</td></tr>{% endif %}
+              {% if quotation.tax %}<tr><td class="text-muted">Tax</td><td class="text-end">{{ quotation.currency or 'Rs' }} {{ "{:,.2f}".format(quotation.tax) }}</td></tr>{% endif %}
+              <tr style="background:var(--primary);color:#fff">
+                <td class="fw-800">TOTAL</td>
+                <td class="text-end fw-800 fs-5">{{ quotation.currency or 'Rs' }} {{ "{:,.2f}".format(quotation.total or 0) }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        {% if quotation.notes %}
+        <div class="mt-4 p-3 bg-light rounded-2">
+          <div class="text-muted small fw-700 mb-1">NOTES / TERMS</div>
+          <div class="small" style="white-space:pre-line">{{ quotation.notes }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="col-lg-4">
+    <div class="admin-card mb-4">
+      <div class="card-header"><i class="bi bi-info-circle me-2"></i>Document Info</div>
+      <div class="card-body">
+        {% set sc = {'draft':'secondary','sent':'info','accepted':'primary','invoiced':'warning','paid':'success'} %}
+        <div class="d-flex justify-content-between mb-3">
+          <span class="text-muted small">Status</span>
+          <span class="status-badge bg-{{ sc.get(quotation.status,'secondary') }} text-white">{{ quotation.status.title() }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-3">
+          <span class="text-muted small">Type</span>
+          <span class="small fw-600">{{ quotation.doc_type.replace('_',' ').title() }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-3">
+          <span class="text-muted small">Version</span>
+          <span class="small fw-600">v{{ quotation.version or 1 }}</span>
+        </div>
+        {% if quotation.valid_until %}
+        <div class="d-flex justify-content-between mb-3">
+          <span class="text-muted small">Valid Until</span>
+          <span class="small fw-600">{{ quotation.valid_until.strftime('%d %b %Y') }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <!-- Update Status -->
+    {% if current_user.has_permission('quotations','edit') %}
+    <div class="admin-card mb-4">
+      <div class="card-header"><i class="bi bi-arrow-repeat me-2"></i>Update Status</div>
+      <div class="card-body">
+        <form method="post" id="statusForm" action="{{ url_for('quotations.update_status', quote_id=quotation.id, status='draft') }}">
+          <select class="form-select form-select-sm mb-2" id="statusSelect" name="status">
+            {% for s in ['draft','sent','accepted','invoiced','paid'] %}
+            <option value="{{ s }}" {% if quotation.status == s %}selected{% endif %}>{{ s.title() }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-primary btn-sm w-100">Update Status</button>
+        </form>
+        <script>
+          document.getElementById('statusForm').addEventListener('submit', function(e) {
+            var sel = document.getElementById('statusSelect').value;
+            this.action = "{{ url_for('quotations.update_status', quote_id=quotation.id, status='__STATUS__') }}".replace('__STATUS__', sel);
+          });
+        </script>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

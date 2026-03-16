@@ -1,0 +1,45 @@
+{% extends 'admin/base.html' %}
+{% block title %}Profitability Report{% endblock %}
+{% block page_title %}Profitability Report{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-bar-chart-line me-2"></i>Profitability Report</h1>
+</div>
+<div class="row g-3 mb-4">
+  {% for label, val, color in [
+    ('Total Revenue', 'Rs {:,.0f}'.format(summary.total_revenue), 'success'),
+    ('Total Cost', 'Rs {:,.0f}'.format(summary.total_cost), 'danger'),
+    ('Gross Profit', 'Rs {:,.0f}'.format(summary.gross_profit), 'primary'),
+    ('Avg Margin', '{:.1f}%'.format(summary.avg_margin), 'info'),
+  ] %}
+  <div class="col-md-3">
+    <div class="kpi-card {{ color }}">
+      <div class="kpi-label">{{ label }}</div>
+      <div class="kpi-value" style="font-size:1.4rem">{{ val }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<div class="admin-card">
+  <div class="card-header"><i class="bi bi-table me-2"></i>Per-Vehicle Profitability</div>
+  <div class="card-body p-0">
+    <table class="table admin-table mb-0">
+      <thead><tr><th>Sale Ref</th><th>Vehicle</th><th>Sale Price</th><th>Landed Cost</th><th>Profit</th><th>Margin %</th></tr></thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td><a href="{{ url_for('sales.view_sale', sale_id=row.sale_id) }}" class="fw-600">{{ row.sale_ref }}</a></td>
+          <td>{% if row.vehicle %}{{ row.vehicle.year }} {{ row.vehicle.make }} {{ row.vehicle.model }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td class="fw-600">Rs {{ "{:,.0f}".format(row.sale_price) }}</td>
+          <td class="text-muted">{% if row.landed_cost %}Rs {{ "{:,.0f}".format(row.landed_cost) }}{% else %}—{% endif %}</td>
+          <td class="{{ 'text-success fw-700' if row.profit >= 0 else 'text-danger fw-700' }}">Rs {{ "{:,.0f}".format(row.profit) }}</td>
+          <td><span class="{{ 'text-success' if row.margin >= 0 else 'text-danger' }} fw-600">{{ "{:.1f}".format(row.margin) }}%</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center py-4 text-muted">No completed sales data.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
