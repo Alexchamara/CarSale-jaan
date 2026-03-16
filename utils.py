@@ -24,6 +24,35 @@ def save_upload(file, subfolder='vehicles'):
     return filename
 
 
+def get_pdf_logo_path(settings=None):
+    """Resolve a server-safe logo path for PDF headers."""
+    candidates = []
+
+    explicit_logo = current_app.config.get('PDF_LOGO_PATH') or os.environ.get('PDF_LOGO_PATH')
+    if explicit_logo:
+        if os.path.isabs(explicit_logo):
+            candidates.append(explicit_logo)
+        else:
+            candidates.append(os.path.join(current_app.root_path, explicit_logo))
+            candidates.append(os.path.join(current_app.instance_path, explicit_logo))
+
+    logo_name = getattr(settings, 'company_logo', None) if settings else None
+    if logo_name:
+        if os.path.isabs(logo_name):
+            candidates.append(logo_name)
+        else:
+            upload_folder = current_app.config.get('UPLOAD_FOLDER')
+            if upload_folder:
+                candidates.append(os.path.join(upload_folder, 'logos', logo_name))
+            candidates.append(os.path.join(current_app.root_path, 'static', 'uploads', 'logos', logo_name))
+
+    # Safe app-relative fallbacks.
+    candidates.append(os.path.join(current_app.root_path, 'logo.png'))
+    candidates.append(os.path.join(current_app.root_path, 'static', 'logo.png'))
+
+    return next((path for path in candidates if path and os.path.exists(path)), None)
+
+
 def log_action(user_id, action, module, record_id=None, details=None):
     try:
         entry = AuditLog(
@@ -70,7 +99,7 @@ def generate_quotation_pdf(quotation):
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import mm
     from reportlab.platypus import (SimpleDocTemplate, Table, TableStyle,
-                                    Paragraph, Spacer, HRFlowable)
+                                    Paragraph, Spacer, HRFlowable, Image)
     from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
     import io
 
@@ -100,19 +129,54 @@ def generate_quotation_pdf(quotation):
     company_phone = s.company_phone if s else ''
     company_email = s.company_email if s else ''
 
+    logo_path = get_pdf_logo_path(s)
+
     story = []
 
     # Header
-    header_data = [
-        [Paragraph(f'<b>{company_name}</b>', ParagraphStyle('ch', fontSize=16, textColor=accent, fontName='Helvetica-Bold')),
-         Paragraph(f'<b>{quotation.doc_type_label.upper()}</b>', ParagraphStyle('dt', fontSize=20, textColor=accent, alignment=TA_RIGHT, fontName='Helvetica-Bold'))],
-        [Paragraph(f'{company_addr}<br/>{company_phone}<br/>{company_email}', small),
-         Paragraph(f'<b>No:</b> {quotation.quote_no}<br/><b>Date:</b> {quotation.created_at.strftime("%d %b %Y")}<br/><b>Valid Until:</b> {quotation.valid_until.strftime("%d %b %Y") if quotation.valid_until else "—"}', ParagraphStyle('ri', fontSize=9, alignment=TA_RIGHT))],
-    ]
-    header_table = Table(header_data, colWidths=[95*mm, 80*mm])
+    company_lines = [f'<b>{company_name}</b>', company_addr]
+    if company_phone:
+        company_lines.append(company_phone)
+    if company_email:
+        company_lines.append(company_email)
+
+    company_details = Paragraph(
+        '<br/>'.join(company_lines),
+        ParagraphStyle('company', fontSize=9, leading=12, textColor=accent)
+    )
+
+    if logo_path:
+        logo = Image(logo_path, width=32*mm, height=32*mm)
+        logo.hAlign = 'LEFT'
+        company_block = Table([[logo, company_details]], colWidths=[36*mm, 74*mm])
+        company_block.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (0, 0), 'TOP'),
+            ('VALIGN', (1, 0), (1, 0), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+    else:
+        company_block = company_details
+
+    header_data = [[
+        company_block,
+        Paragraph(
+            f'<b>{quotation.doc_type_label.upper()}</b><br/><b>No:</b> {quotation.quote_no}<br/>'
+            f'<b>Date:</b> {quotation.created_at.strftime("%d %b %Y")}<br/>'
+            f'<b>Valid Until:</b> {quotation.valid_until.strftime("%d %b %Y") if quotation.valid_until else "—"}',
+            ParagraphStyle('ri', fontSize=9, alignment=TA_RIGHT, leading=12)
+        )
+    ]]
+    header_table = Table(header_data, colWidths=[110*mm, 64*mm])
     header_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('LINEBELOW', (0, 1), (-1, 1), 0.5, mid_gray),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LINEBELOW', (0, 0), (-1, 0), 0.5, mid_gray),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (1, 0), (1, 0), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
     ]))
     story.append(header_table)
     story.append(Spacer(1, 5*mm))
@@ -228,7 +292,7 @@ def generate_cost_sheet_pdf(vehicle, cost_sheet):
     from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import mm
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
     from reportlab.lib.enums import TA_RIGHT, TA_CENTER
     import io
 
@@ -251,9 +315,56 @@ def generate_cost_sheet_pdf(vehicle, cost_sheet):
 
     story = []
     company_name = s.company_name if s else 'Sonnac Lanka Enterprises'
+    company_addr = s.company_address if s else 'Negombo, Sri Lanka'
+    company_phone = s.company_phone if s else ''
+    company_email = s.company_email if s else ''
 
-    story.append(Paragraph(company_name, h1))
-    story.append(Paragraph(f'<b>VEHICLE COST SHEET</b>', ParagraphStyle('sub', fontSize=13, textColor=accent)))
+    logo_path = get_pdf_logo_path(s)
+
+    company_lines = [f'<b>{company_name}</b>', company_addr]
+    if company_phone:
+        company_lines.append(company_phone)
+    if company_email:
+        company_lines.append(company_email)
+
+    company_details = Paragraph(
+        '<br/>'.join(company_lines),
+        ParagraphStyle('company_cost', fontSize=9, leading=12, textColor=accent)
+    )
+
+    if logo_path:
+        logo = Image(logo_path, width=32*mm, height=32*mm)
+        logo.hAlign = 'LEFT'
+        company_block = Table([[logo, company_details]], colWidths=[36*mm, 74*mm])
+        company_block.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (0, 0), 'TOP'),
+            ('VALIGN', (1, 0), (1, 0), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+    else:
+        company_block = company_details
+
+    header_table = Table([[
+        company_block,
+        Paragraph(
+            f'<b>VEHICLE COST SHEET</b><br/><b>Date:</b> '
+            f'{cost_sheet.updated_at.strftime("%d %b %Y") if cost_sheet.updated_at else "—"}',
+            ParagraphStyle('cost_title', fontSize=12, textColor=accent, alignment=TA_RIGHT, leading=14, fontName='Helvetica-Bold')
+        )
+    ]], colWidths=[110*mm, 64*mm])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LINEBELOW', (0, 0), (-1, 0), 0.5, mid_gray),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+
+    story.append(header_table)
     story.append(Spacer(1, 5*mm))
 
     veh_info = [
