@@ -1,6 +1,8 @@
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify, current_app
 from flask_login import login_required, current_user
+from sqlalchemy.exc import IntegrityError
+from types import SimpleNamespace
 from models import db, Vehicle, VehicleImage, VehicleDocument, SystemSettings, VehicleMake, VehicleModel
 from utils import allowed_image, allowed_doc, save_upload, log_action
 import io
@@ -28,6 +30,30 @@ def resolve_make_model(make_id_val, model_id_val, make_text, model_text):
     make_name = make_obj.name if make_obj else (make_text or '').strip()
     model_name = model_obj.name if model_obj else (model_text or '').strip()
     return make_obj.id if make_obj else None, model_obj.id if model_obj else None, make_name, model_name
+
+
+def build_temp_vehicle(form, make_id_val, model_id_val, make_name, model_name):
+    return SimpleNamespace(
+        make_id=make_id_val,
+        model_id=model_id_val,
+        make=make_name,
+        model=model_name,
+        year=form.get('year', type=int) or None,
+        chassis_no=(form.get('chassis_no') or '').strip() or None,
+        engine_no=(form.get('engine_no') or '').strip() or None,
+        reg_no=(form.get('reg_no') or '').strip() or None,
+        color=(form.get('color') or '').strip() or None,
+        body_type=form.get('body_type'),
+        fuel_type=form.get('fuel_type'),
+        transmission=form.get('transmission'),
+        mileage=form.get('mileage', type=int) or None,
+        condition_grade=form.get('condition_grade'),
+        status=form.get('status', 'available'),
+        selling_price=(float(form.get('selling_price') or 0) or None),
+        is_featured=bool(form.get('is_featured')),
+        description=form.get('description'),
+        internal_notes=form.get('internal_notes'),
+    )
 
 
 @inventory_bp.route('/')
@@ -96,10 +122,24 @@ def new_vehicle():
         make_text = request.form.get('make', '').strip()
         model_text = request.form.get('model', '').strip()
         make_id_resolved, model_id_resolved, make_name, model_name = resolve_make_model(make_id_val, model_id_val, make_text, model_text)
+        chassis_no = (request.form.get('chassis_no') or '').strip() or None
+        engine_no = (request.form.get('engine_no') or '').strip() or None
+        reg_no = (request.form.get('reg_no') or '').strip() or None
+        mileage_val = request.form.get('mileage', type=int) or None
+        selling_price_val = float(request.form.get('selling_price') or 0) or None
+        form_vehicle = build_temp_vehicle(request.form, make_id_resolved, model_id_resolved, make_name, model_name)
+        if chassis_no:
+            existing = Vehicle.query.filter_by(chassis_no=chassis_no).first()
+            if existing:
+                flash('A vehicle with this chassis number already exists.', 'danger')
+                return render_template('admin/inventory/form.html', vehicle=form_vehicle,
+                                       body_types=BODY_TYPES, fuel_types=FUEL_TYPES,
+                                       transmissions=TRANSMISSIONS, conditions=CONDITIONS, statuses=STATUSES,
+                                       makes=makes, models=models)
         v = Vehicle(
-            chassis_no=request.form.get('chassis_no') or None,
-            engine_no=request.form.get('engine_no') or None,
-            reg_no=request.form.get('reg_no') or None,
+            chassis_no=chassis_no,
+            engine_no=engine_no,
+            reg_no=reg_no,
             make_id=make_id_resolved,
             model_id=model_id_resolved,
             make=make_name,
@@ -109,17 +149,25 @@ def new_vehicle():
             fuel_type=request.form.get('fuel_type'),
             transmission=request.form.get('transmission'),
             color=request.form.get('color'),
-            mileage=int(request.form.get('mileage') or 0) or None,
+            mileage=mileage_val,
             condition_grade=request.form.get('condition_grade'),
             status=request.form.get('status', 'available'),
-            selling_price=float(request.form.get('selling_price') or 0) or None,
+            selling_price=selling_price_val,
             description=request.form.get('description'),
             internal_notes=request.form.get('internal_notes'),
             is_featured=bool(request.form.get('is_featured')),
             created_by=current_user.id,
         )
         db.session.add(v)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash('A vehicle with this chassis number already exists.', 'danger')
+            return render_template('admin/inventory/form.html', vehicle=form_vehicle,
+                                   body_types=BODY_TYPES, fuel_types=FUEL_TYPES,
+                                   transmissions=TRANSMISSIONS, conditions=CONDITIONS, statuses=STATUSES,
+                                   makes=makes, models=models)
 
         # Handle image uploads
         images = request.files.getlist('images')
@@ -162,9 +210,26 @@ def edit_vehicle(vehicle_id):
         make_text = request.form.get('make', '').strip()
         model_text = request.form.get('model', '').strip()
         make_id_resolved, model_id_resolved, make_name, model_name = resolve_make_model(make_id_val, model_id_val, make_text, model_text)
-        vehicle.chassis_no = request.form.get('chassis_no') or None
-        vehicle.engine_no = request.form.get('engine_no') or None
-        vehicle.reg_no = request.form.get('reg_no') or None
+        chassis_no = (request.form.get('chassis_no') or '').strip() or None
+        engine_no = (request.form.get('engine_no') or '').strip() or None
+        reg_no = (request.form.get('reg_no') or '').strip() or None
+        mileage_val = request.form.get('mileage', type=int) or None
+        selling_price_val = float(request.form.get('selling_price') or 0) or None
+        form_vehicle = build_temp_vehicle(request.form, make_id_resolved, model_id_resolved, make_name, model_name)
+        form_vehicle.id = vehicle.id
+        form_vehicle.images = vehicle.images
+        form_vehicle.documents = vehicle.documents
+        if chassis_no:
+            duplicate = Vehicle.query.filter(Vehicle.chassis_no == chassis_no, Vehicle.id != vehicle_id).first()
+            if duplicate:
+                flash('Another vehicle already uses this chassis number.', 'danger')
+                return render_template('admin/inventory/form.html', vehicle=form_vehicle,
+                                       body_types=BODY_TYPES, fuel_types=FUEL_TYPES,
+                                       transmissions=TRANSMISSIONS, conditions=CONDITIONS, statuses=STATUSES,
+                                       makes=makes, models=models)
+        vehicle.chassis_no = chassis_no
+        vehicle.engine_no = engine_no
+        vehicle.reg_no = reg_no
         vehicle.make_id = make_id_resolved
         vehicle.model_id = model_id_resolved
         vehicle.make = make_name
@@ -174,14 +239,22 @@ def edit_vehicle(vehicle_id):
         vehicle.fuel_type = request.form.get('fuel_type')
         vehicle.transmission = request.form.get('transmission')
         vehicle.color = request.form.get('color')
-        vehicle.mileage = int(request.form.get('mileage') or 0) or None
+        vehicle.mileage = mileage_val
         vehicle.condition_grade = request.form.get('condition_grade')
         vehicle.status = request.form.get('status', 'available')
-        vehicle.selling_price = float(request.form.get('selling_price') or 0) or None
+        vehicle.selling_price = selling_price_val
         vehicle.description = request.form.get('description')
         vehicle.internal_notes = request.form.get('internal_notes')
         vehicle.is_featured = bool(request.form.get('is_featured'))
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash('A vehicle with this chassis number already exists.', 'danger')
+            return render_template('admin/inventory/form.html', vehicle=form_vehicle,
+                                   body_types=BODY_TYPES, fuel_types=FUEL_TYPES,
+                                   transmissions=TRANSMISSIONS, conditions=CONDITIONS, statuses=STATUSES,
+                                   makes=makes, models=models)
 
         # New images
         images = request.files.getlist('images')
