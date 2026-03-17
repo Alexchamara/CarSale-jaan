@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+import os
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from models import Vehicle, VehicleImage, SystemSettings, Inquiry, db, VehicleMake, VehicleModel
 from sqlalchemy import or_
 
@@ -22,9 +23,19 @@ def index():
         'total_sold': Vehicle.query.filter_by(status='sold').count(),
         'happy_customers': Vehicle.query.filter_by(status='sold').count(),
     }
+    # Scan logo files from uploads/logos for the brand carousel
+    logos_dir = os.path.join(current_app.static_folder, 'uploads', 'logos')
+    brand_logos = []
+    if os.path.isdir(logos_dir):
+        for fname in sorted(os.listdir(logos_dir)):
+            if fname.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.svg')):
+                name = os.path.splitext(fname)[0].strip()
+                brand_logos.append({'name': name, 'filename': fname})
+
     return render_template('public/index.html', featured_vehicles=featured_vehicles,
                            latest_vehicles=latest_vehicles, makes=makes, models=models,
-                           body_types=body_types, fuel_types=fuel_types, stats=stats)
+                           body_types=body_types, fuel_types=fuel_types, stats=stats,
+                           brand_logos=brand_logos)
 
 
 @public_bp.route('/vehicles')

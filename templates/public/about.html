@@ -1,69 +1,335 @@
 {% extends 'public/base.html' %}
-{% block title %}About Us — {{ settings.company_name if settings else 'Sonnac Lanka' }}{% endblock %}
+{% block title %}About Us — {{ settings.company_name if settings else 'Sonnac Bidding Centre' }}{% endblock %}
 {% block content %}
 
-<!-- Page Hero -->
-<div class="lux-page-hero">
+<style>
+  .abt * { font-family: 'DM Sans', sans-serif; }
+
+  /* ═══ HERO ═══ */
+  .abt-hero {
+    background: var(--lt-navy); padding: 5.5rem 0 4.5rem; position: relative; overflow: hidden;
+    border-bottom: 3px solid var(--lt-gold);
+  }
+  .abt-hero::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 30% 50%, rgba(184,132,26,0.08) 0%, transparent 65%);
+  }
+  .abt-hero .container { position: relative; z-index: 2; }
+  .abt-hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 0.75rem;
+    font-size: 0.65rem; letter-spacing: 3.5px; text-transform: uppercase;
+    color: var(--lt-gold); margin-bottom: 1rem;
+  }
+  .abt-hero-eyebrow::before { content: ''; width: 28px; height: 1px; background: var(--lt-gold); }
+  .abt-hero h1 {
+    font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 800; color: #fff;
+    letter-spacing: -1px; line-height: 1.08; margin-bottom: 1rem;
+  }
+  .abt-hero h1 em { font-style: italic; color: var(--lt-gold); font-weight: 300; }
+  .abt-hero p { color: rgba(255,255,255,0.6); font-size: 1rem; font-weight: 300; max-width: 540px; line-height: 1.8; margin: 0; }
+
+  /* ═══ STATS ═══ */
+  .abt-stats { background: var(--lt-card); padding: 0; border-bottom: 1px solid var(--lt-border); }
+  .abt-stat-row { display: flex; }
+  .abt-stat-item {
+    flex: 1; text-align: center; padding: 2rem 1rem;
+    border-right: 1px solid var(--lt-border);
+    transition: background 0.25s;
+  }
+  .abt-stat-item:last-child { border-right: none; }
+  .abt-stat-item:hover { background: var(--lt-bg); }
+  .abt-stat-num { font-size: 2.4rem; font-weight: 800; color: var(--lt-gold); line-height: 1; letter-spacing: -1px; }
+  .abt-stat-lbl { font-size: 0.65rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--lt-muted); margin-top: 0.3rem; }
+
+  /* ═══ STORY ═══ */
+  .abt-story { background: var(--lt-bg); padding: 5rem 0; }
+  .abt-story h2 {
+    font-size: 2rem; font-weight: 800; color: var(--lt-navy);
+    letter-spacing: -0.5px; margin-bottom: 1.5rem; line-height: 1.15;
+  }
+  .abt-story h2 span { color: var(--lt-gold); }
+  .abt-story p { color: var(--lt-muted); font-size: 0.94rem; line-height: 1.9; margin-bottom: 1rem; }
+  .abt-highlight {
+    background: var(--lt-card); border-left: 4px solid var(--lt-gold);
+    padding: 1.25rem 1.5rem; border-radius: 0 6px 6px 0;
+    font-size: 0.92rem; color: var(--lt-navy); font-weight: 600;
+    line-height: 1.7; margin: 1.75rem 0;
+  }
+
+  /* ═══ TEAM SECTION ═══ */
+  .abt-team-section { padding: 5rem 0; background: var(--lt-card); border-top: 1px solid var(--lt-border); }
+  .abt-sec-heading { text-align: center; margin-bottom: 3.5rem; }
+  .abt-sec-heading .accent-bar {
+    width: 36px; height: 3px; background: #e74c3c; border-radius: 2px;
+    display: inline-block; margin-bottom: 0.75rem;
+  }
+  .abt-sec-heading h2 {
+    font-size: 1.6rem; font-weight: 800; color: var(--lt-navy);
+    letter-spacing: -0.3px; margin: 0 0 0.4rem;
+  }
+  .abt-sec-heading p { font-size: 0.88rem; color: var(--lt-muted); margin: 0; }
+
+  /* ═══ TEAM CARD ═══ */
+  .abt-card {
+    background: var(--lt-bg); border: 1px solid var(--lt-border);
+    border-radius: 16px; padding: 2.5rem 1.75rem 2rem; text-align: center;
+    height: 100%; position: relative; overflow: visible;
+    transition: transform 0.35s, box-shadow 0.35s, border-color 0.35s;
+  }
+  .abt-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+    border-color: var(--lt-gold-border);
+  }
+  .abt-card-badge {
+    position: absolute; top: 1rem; right: 1rem;
+    background: var(--lt-gold); color: #fff;
+    font-size: 0.55rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 0.2rem 0.6rem; border-radius: 3px;
+  }
+
+  /* Circle Avatar */
+  .abt-avatar-wrap {
+    width: 140px; height: 140px; margin: 0 auto 1.5rem; position: relative;
+  }
+  .abt-avatar-ring {
+    position: absolute; inset: -5px; border-radius: 50%;
+    border: 2px solid var(--lt-border); transition: border-color 0.35s;
+  }
+  .abt-card:hover .abt-avatar-ring { border-color: var(--lt-gold); }
+  .abt-avatar {
+    width: 140px; height: 140px; border-radius: 50%;
+    object-fit: cover; object-position: top;
+    display: block; position: relative; z-index: 1;
+    transition: transform 0.4s, box-shadow 0.4s;
+  }
+  .abt-card:hover .abt-avatar {
+    transform: scale(1.06);
+    box-shadow: 0 8px 30px rgba(184,132,26,0.22);
+  }
+
+  .abt-card-name { font-size: 1.08rem; font-weight: 700; color: var(--lt-navy); margin-bottom: 0.2rem; }
+  .abt-card-role {
+    font-size: 0.74rem; color: var(--lt-gold); font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 1.25rem;
+  }
+  .abt-card-divider {
+    width: 36px; height: 2px; background: var(--lt-gold); opacity: 0.5;
+    margin: 0 auto 1.25rem; border-radius: 2px;
+    transition: width 0.3s, opacity 0.3s;
+  }
+  .abt-card:hover .abt-card-divider { width: 56px; opacity: 1; }
+
+  /* Contact list */
+  .abt-card-contact { list-style: none; padding: 0; margin: 0; text-align: left; }
+  .abt-card-contact li {
+    font-size: 0.8rem; padding: 0.45rem 0.5rem;
+    display: flex; align-items: center; gap: 0.6rem;
+    border-radius: 6px; transition: background 0.2s;
+  }
+  .abt-card-contact li:hover { background: var(--lt-card); }
+  .abt-card-contact li i { font-size: 0.95rem; width: 22px; text-align: center; flex-shrink: 0; }
+  .abt-card-contact li .bi-whatsapp { color: #25d366; }
+  .abt-card-contact li .bi-phone { color: #e74c3c; }
+  .abt-card-contact li .bi-envelope { color: var(--lt-gold); }
+  .abt-card-contact li a {
+    color: var(--lt-muted); text-decoration: none; transition: color 0.2s;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .abt-card-contact li a:hover { color: var(--lt-navy); }
+
+  /* ═══ FIND US ═══ */
+  .abt-find { padding: 5rem 0; background: var(--lt-bg); border-top: 1px solid var(--lt-border); }
+
+  /* ═══ RESPONSIVE ═══ */
+  @media (max-width: 991px) {
+    .abt-stat-row { flex-wrap: wrap; }
+    .abt-stat-item { flex: 0 0 50%; border-bottom: 1px solid var(--lt-border); }
+    .abt-stat-item:nth-child(2) { border-right: none; }
+    .abt-stat-item:nth-child(3), .abt-stat-item:nth-child(4) { border-bottom: none; }
+  }
+  @media (max-width: 767px) {
+    .abt-hero { padding: 4rem 0 3rem; }
+    .abt-story h2 { font-size: 1.5rem; }
+    .abt-avatar-wrap, .abt-avatar { width: 110px; height: 110px; }
+    .abt-card { padding: 2rem 1.25rem 1.5rem; }
+  }
+</style>
+
+<div class="abt">
+
+<!-- ════════ HERO ════════ -->
+<section class="abt-hero">
   <div class="container">
-    <div class="lux-eyebrow">Our Story</div>
-    <h1>About {{ settings.company_name if settings else 'Sonnac Lanka Enterprises' }}</h1>
-    <p>Your trusted partner for quality pre-owned and imported vehicles</p>
+    <div class="abt-hero-eyebrow">Est. 2003</div>
+    <h1>About <em>{{ settings.company_name if settings else 'Sonnac Bidding Centre' }}</em></h1>
+    <p>Sri Lanka's premier vehicle importers, bidding coordinators, and export supporting partners — trusted by customers across the globe.</p>
   </div>
-</div>
+</section>
 
-<div class="lux-body-wrap">
+
+<!-- ════════ STATS ════════ -->
+<section class="abt-stats">
+  <div class="container-fluid px-0">
+    <div class="abt-stat-row">
+      <div class="abt-stat-item">
+        <div class="abt-stat-num">1500+</div>
+        <div class="abt-stat-lbl">Vehicles Supplied</div>
+      </div>
+      <div class="abt-stat-item">
+        <div class="abt-stat-num">20+</div>
+        <div class="abt-stat-lbl">Years Experience</div>
+      </div>
+      <div class="abt-stat-item">
+        <div class="abt-stat-num">100%</div>
+        <div class="abt-stat-lbl">Trust & Loyalty</div>
+      </div>
+      <div class="abt-stat-item">
+        <div class="abt-stat-num">5+</div>
+        <div class="abt-stat-lbl">Countries Served</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════ OUR STORY ════════ -->
+<section class="abt-story">
   <div class="container">
-    <div class="row g-5 align-items-center mb-5">
-
-      <!-- Who We Are -->
-      <div class="col-lg-6">
+    <div class="row g-5">
+      <div class="col-lg-7">
         <div class="lux-sec-title mb-3">Who We Are</div>
-        <h2 style="font-size:2rem;font-weight:800;color:var(--lt-navy);letter-spacing:-0.5px;margin-bottom:1.25rem">
-          Sri Lanka's Premier Vehicle Specialists
-        </h2>
-        <p class="lux-text mb-3">We are one of Sri Lanka's leading vehicle importers and dealers, specialising in quality pre-owned and brand-new imported vehicles. With over a decade of experience in the industry, we have built a reputation for transparency, reliability, and exceptional customer service.</p>
-        <p class="lux-text mb-4">Our dedicated team handles everything from LC-based vehicle imports, customs clearance, to delivery — ensuring a hassle-free experience for every customer.</p>
+        <h2>Sri Lanka's Premier <span>Vehicle Specialists</span> & Bidding Coordinators</h2>
 
-        <!-- Stats -->
-        <div class="row g-3">
-          {% for icon, num, lbl in [('car-front','500+','Vehicles Sold'),('people','300+','Happy Customers'),('award','10+','Years Experience'),('patch-check','100%','Transparent Deals')] %}
-          <div class="col-6">
-            <div class="lux-stat-box">
-              <i class="bi bi-{{ icon }} stat-icon"></i>
-              <div>
-                <div class="stat-num">{{ num }}</div>
-                <div class="stat-lbl">{{ lbl }}</div>
-              </div>
-            </div>
-          </div>
-          {% endfor %}
+        <p>Our company was established in 2003 as Sonnac Lanka Enterprise, and in 2011 it was renamed as Sonnac Bidding Centre, expanding business activities throughout the country. We have been doing business as vehicle importers and suppliers (Exporter supporting coordinator) and from 2011 we have been providing our services as an Import and Export supporting coordinator, gaining a very good reputation among our customers.</p>
+
+        <p>We have very good supporting staff who handle all the jobs entrusted to them with great responsibility and efficiency. Our staff is well conversant with the Sri Lankan and overseas automobile market and the price changes in vehicle auctioning. We own a huge customer network — and we are proud to say that because of this network, we are capable of purchasing a vehicle and selling it off within minutes or in a few hours at the latest.</p>
+
+        <div class="abt-highlight">
+          <i class="bi bi-quote" style="color:var(--lt-gold);font-size:1.2rem;margin-right:0.5rem"></i>
+          Our company has supplied over 1,500 vehicles since 2011. Export and import depend on the trust and loyalty of the company. If you work with us, you will be guaranteed of these two.
         </div>
+
+        <p>To answer to the demand of the customers, we have formed a supply network that expands our customer services. This benefits all parties including customers and suppliers alike. Any vehicle Exporter or Importer who works cautiously and confidently can easily adapt to our system and work with us.</p>
       </div>
 
-      <!-- Services -->
-      <div class="col-lg-6">
+      <div class="col-lg-5">
+        <div class="lux-sec-title mb-3">Global Reach</div>
+        <p style="color:var(--lt-muted);font-size:0.94rem;line-height:1.9;margin-bottom:1.5rem">At present we mainly import vehicles from <strong style="color:var(--lt-navy)">Japan</strong> and <strong style="color:var(--lt-navy)">England</strong>. We plan to expand our imports from countries such as Thailand, Indonesia, and more. We have already started our sales and marketing in Australia and Myanmar.</p>
+
         <div class="lux-card">
           <div class="lux-card-title"><i class="bi bi-building"></i>Our Services</div>
           <ul class="lux-services-list">
-            {% for svc in ['Imported Vehicle Sales (LC-based)','Pre-Owned Vehicle Sales','Vehicle LC & Documentation Assistance','Bank Leasing Arrangement','Vehicle Inspection & Grading','After-Sales Support & Servicing'] %}
+            {% for svc in [
+              'Vehicle Importing & Bidding Coordination',
+              'Export Supporting Coordination',
+              'Pre-Owned & Brand-New Vehicle Sales',
+              'LC & Documentation Assistance',
+              'Bank Leasing Arrangement',
+              'Japan Auction Vehicle Search',
+              'After-Sales Support & Servicing'
+            ] %}
             <li><i class="bi bi-check-circle-fill"></i>{{ svc }}</li>
             {% endfor %}
           </ul>
         </div>
       </div>
+    </div>
+  </div>
+</section>
 
-    </div><!-- /row -->
 
-    {% if settings and settings.google_maps_embed %}
-    <div class="mt-2">
-      <div class="lux-sec-title mb-3">Find Us</div>
-      <div class="ratio ratio-21x9" style="border:1px solid var(--lt-border);overflow:hidden">
-        {{ settings.google_maps_embed | safe }}
+<!-- ════════ OUR TEAM — ALL 3 IN ONE ROW ════════ -->
+<section class="abt-team-section">
+  <div class="container">
+    <div class="abt-sec-heading">
+      <div class="accent-bar"></div>
+      <h2>Meet Our Team</h2>
+      <p>The people behind Sonnac Bidding Centre</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+      <!-- CEO / Founder -->
+      <div class="col-md-6 col-lg-4">
+        <div class="abt-card">
+          <div class="abt-card-badge">Founder</div>
+          <div class="abt-avatar-wrap">
+            <div class="abt-avatar-ring"></div>
+            <img src="{{ url_for('static', filename='uploads/aboutus/manager01.jpg') }}"
+                 alt="A.G.Yaseer Arafath" class="abt-avatar">
+          </div>
+          <div class="abt-card-name">A.G.Yaseer Arafath</div>
+          <div class="abt-card-role">CEO / Founder</div>
+          <div class="abt-card-divider"></div>
+          <ul class="abt-card-contact">
+            <li><i class="bi bi-whatsapp"></i><a href="https://wa.me/94777366463">sonnaclanka</a></li>
+            <li><i class="bi bi-phone"></i><a href="tel:+94777366463">+94 (0)777 366 463</a></li>
+            <li><i class="bi bi-envelope"></i><a href="mailto:yumnaarafath@gmail.com">yumnaarafath@gmail.com</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Stephi -->
+      <div class="col-md-6 col-lg-4">
+        <div class="abt-card">
+          <div class="abt-avatar-wrap">
+            <div class="abt-avatar-ring"></div>
+            <img src="{{ url_for('static', filename='uploads/aboutus/Stephi.jpg') }}"
+                 alt="Stephi Herft" class="abt-avatar">
+          </div>
+          <div class="abt-card-name">Stephi Herft</div>
+          <div class="abt-card-role">Business Development Executive</div>
+          <div class="abt-card-divider"></div>
+          <ul class="abt-card-contact">
+            <li><i class="bi bi-whatsapp"></i><a href="https://wa.me/94766027899">sbc.stephi</a></li>
+            <li><i class="bi bi-phone"></i><a href="tel:+94766027899">+94 (0)76 602 78 99</a></li>
+            <li><i class="bi bi-envelope"></i><a href="mailto:stephi@sonnacbiddingcentre.com">stephi@sonnacbiddingcentre.com</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Rizni -->
+      <div class="col-md-6 col-lg-4">
+        <div class="abt-card">
+          <div class="abt-avatar-wrap">
+            <div class="abt-avatar-ring"></div>
+            <img src="{{ url_for('static', filename='uploads/aboutus/rizni.jpg') }}"
+                 alt="M A M Rizni" class="abt-avatar">
+          </div>
+          <div class="abt-card-name">M A M Rizni</div>
+          <div class="abt-card-role">Business Development Executive</div>
+          <div class="abt-card-divider"></div>
+          <ul class="abt-card-contact">
+            <li><i class="bi bi-whatsapp"></i><a href="https://wa.me/94768212382">sbc.rizni</a></li>
+            <li><i class="bi bi-phone"></i><a href="tel:+94768212382">+94 (0)76 821 23 82</a></li>
+            <li><i class="bi bi-envelope"></i><a href="mailto:rizni@sonnacbiddingcentre.com">rizni@sonnacbiddingcentre.com</a></li>
+          </ul>
+        </div>
       </div>
     </div>
-    {% endif %}
+  </div>
+</section>
 
-  </div><!-- /container -->
-</div>
+
+<!-- ════════ FIND US ════════ -->
+{% if settings and settings.google_maps_embed %}
+<section class="abt-find">
+  <div class="container">
+    <div class="abt-sec-heading">
+      <div class="accent-bar"></div>
+      <h2>Find Us</h2>
+      <p>Visit our showroom at the World Trade Centre</p>
+    </div>
+    <div class="ratio ratio-21x9" style="border:1px solid var(--lt-border);border-radius:10px;overflow:hidden">
+      {{ settings.google_maps_embed | safe }}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+</div><!-- /.abt -->
+
+{% include 'public/_opening_hours.html' %}
+
 {% endblock %}
 
