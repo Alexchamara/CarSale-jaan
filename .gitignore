@@ -21,8 +21,7 @@ ENV/
 .env.*
 instance/
 
-# Uploads (user-generated content)
-static/uploads/
+
 
 # Logs
 *.log
