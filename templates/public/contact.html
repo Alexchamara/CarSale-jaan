@@ -1,20 +1,25 @@
 {% extends 'public/base.html' %}
 {% block title %}Contact Us — {{ settings.company_name if settings else 'Sonnac Lanka' }}{% endblock %}
 {% block content %}
-<div style="background:var(--primary);padding:4rem 0;color:#fff;text-align:center">
+
+<!-- Page Hero -->
+<div class="lux-page-hero">
   <div class="container">
-    <h1 class="fw-800 mb-2">Contact Us</h1>
-    <p class="opacity-75">We'd love to hear from you. Reach us through any of the channels below.</p>
+    <div class="lux-eyebrow">Get In Touch</div>
+    <h1>Contact Us</h1>
+    <p>We'd love to hear from you. Reach us through any of the channels below.</p>
   </div>
 </div>
-<div class="container py-5">
-  <div class="row g-5">
-    <!-- Contact Form -->
-    <div class="col-lg-7">
-      <div class="admin-card">
-        <div class="card-header"><i class="bi bi-envelope me-2"></i>Send Us a Message</div>
-        <div class="card-body">
-          <form method="post">
+
+<div class="lux-body-wrap">
+  <div class="container">
+    <div class="row g-5">
+
+      <!-- Contact Form -->
+      <div class="col-lg-7">
+        <div class="lux-card">
+          <div class="lux-card-title"><i class="bi bi-envelope"></i>Send Us a Message</div>
+          <form method="post" class="lux-form">
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label">Your Name *</label>
@@ -42,47 +47,69 @@
                 <textarea class="form-control" name="message" rows="5" required placeholder="Tell us how we can help you…"></textarea>
               </div>
               <div class="col-12">
-                <button type="submit" class="btn btn-primary px-4">
-                  <i class="bi bi-send me-2"></i>Send Message
+                <button type="submit" class="sl-btn-gold">
+                  <i class="bi bi-send"></i>Send Message
                 </button>
               </div>
             </div>
           </form>
         </div>
       </div>
-    </div>
-    <!-- Contact Info -->
-    <div class="col-lg-5">
-      <h5 class="fw-700 mb-4" style="color:var(--primary)">Get In Touch</h5>
-      {% if settings %}
-        {% if settings.address %}
-        <div class="d-flex gap-3 mb-3">
-          <div style="width:40px;height:40px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0"><i class="bi bi-geo-alt-fill"></i></div>
-          <div><div class="fw-600 small">Address</div><div class="text-muted small">{{ settings.address }}</div></div>
-        </div>
+
+      <!-- Contact Info -->
+      <div class="col-lg-5">
+        <div class="lux-sec-title mb-4">Direct Contact</div>
+
+        {% if settings %}
+          {% if settings.address %}
+          <div class="lux-contact-item">
+            <div class="lux-contact-icon"><i class="bi bi-geo-alt-fill"></i></div>
+            <div class="lux-contact-info">
+              <div class="ci-label">Address</div>
+              <div class="ci-value">{{ settings.address }}</div>
+            </div>
+          </div>
+          {% endif %}
+          {% if settings.phone %}
+          <div class="lux-contact-item">
+            <div class="lux-contact-icon"><i class="bi bi-telephone-fill"></i></div>
+            <div class="lux-contact-info">
+              <div class="ci-label">Phone</div>
+              <div class="ci-value"><a href="tel:{{ settings.phone }}">{{ settings.phone }}</a></div>
+            </div>
+          </div>
+          {% endif %}
+          {% if settings.email %}
+          <div class="lux-contact-item">
+            <div class="lux-contact-icon"><i class="bi bi-envelope-fill"></i></div>
+            <div class="lux-contact-info">
+              <div class="ci-label">Email</div>
+              <div class="ci-value"><a href="mailto:{{ settings.email }}">{{ settings.email }}</a></div>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if settings.whatsapp_number %}
+          <div class="mt-3 mb-4">
+            <a href="https://wa.me/{{ settings.whatsapp_number }}" target="_blank"
+               style="background:#25D366;color:#fff;border:none;display:inline-flex;align-items:center;gap:0.6rem;padding:0.8rem 1.5rem;font-weight:700;font-size:0.82rem;letter-spacing:1px;text-transform:uppercase;text-decoration:none;transition:background .25s"
+               onmouseover="this.style.background='#128C7E'" onmouseout="this.style.background='#25D366'">
+              <i class="bi bi-whatsapp"></i>Chat on WhatsApp
+            </a>
+          </div>
+          {% endif %}
+
+          {% if settings.google_maps_embed %}
+          <div style="border:1px solid var(--lt-border);overflow:hidden" class="ratio ratio-4x3 mt-3">
+            {{ settings.google_maps_embed | safe }}
+          </div>
+          {% endif %}
         {% endif %}
-        {% if settings.phone %}
-        <div class="d-flex gap-3 mb-3">
-          <div style="width:40px;height:40px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0"><i class="bi bi-telephone-fill"></i></div>
-          <div><div class="fw-600 small">Phone</div><a href="tel:{{ settings.phone }}" class="text-muted small">{{ settings.phone }}</a></div>
-        </div>
-        {% endif %}
-        {% if settings.email %}
-        <div class="d-flex gap-3 mb-3">
-          <div style="width:40px;height:40px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0"><i class="bi bi-envelope-fill"></i></div>
-          <div><div class="fw-600 small">Email</div><a href="mailto:{{ settings.email }}" class="text-muted small">{{ settings.email }}</a></div>
-        </div>
-        {% endif %}
-        {% if settings.whatsapp_number %}
-        <a href="https://wa.me/{{ settings.whatsapp_number }}" target="_blank" class="btn btn-whatsapp mt-3 w-100">
-          <i class="bi bi-whatsapp me-2"></i>Chat on WhatsApp
-        </a>
-        {% endif %}
-        {% if settings.google_maps_embed %}
-        <div class="mt-4 ratio ratio-4x3 rounded-3 overflow-hidden">{{ settings.google_maps_embed | safe }}</div>
-        {% endif %}
-      {% endif %}
-    </div>
-  </div>
+      </div>
+
+    </div><!-- /row -->
+  </div><!-- /container -->
 </div>
+
 {% endblock %}
+

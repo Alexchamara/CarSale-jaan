@@ -8,6 +8,10 @@
   <link rel="icon" type="image/png" href="{{ favicon_src }}">
   <link rel="shortcut icon" type="image/png" href="{{ favicon_src }}">
   <link rel="apple-touch-icon" href="{{ favicon_src }}">
+  <!-- Google Fonts: DM Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,300&display=swap" rel="stylesheet">
   <!-- Bootstrap 5 -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <!-- Bootstrap Icons -->
@@ -19,30 +23,59 @@
 <body class="public-body">
 
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg public-navbar sticky-top">
-  <div class="container">
-    <a class="navbar-brand" href="{{ url_for('public.index') }}">
+<nav class="navbar navbar-expand-lg modern-navbar sticky-top">
+  <div class="container-fluid px-4">
+    <!-- Brand/Logo -->
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('public.index') }}">
       {% set logo_src = url_for('static', filename='uploads/logos/' + settings.logo) if settings and settings.logo else url_for('static', filename='logo.png') %}
-      <img src="{{ logo_src }}" alt="{{ settings.company_name if settings else 'Sonnac Lanka' }}" height="64" class="me-2 rounded-2">
-      {{ settings.company_name if settings else 'Sonnac Lanka' }}
+      <div class="logo-wrapper">
+        <img src="{{ logo_src }}" alt="{{ settings.company_name if settings else 'Sonnac Lanka' }}" class="navbar-logo" height="50">
+      </div>
+      <div class="brand-text d-none d-md-block">
+        <span class="brand-name">{{ settings.company_name if settings else 'Sonnac Lanka' }}</span>
+      </div>
     </a>
+
+    <!-- Navbar Toggler (Mobile) -->
     <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
-      <span class="navbar-toggler-icon" style="filter:invert(1)"></span>
+      <i class="bi bi-list"></i>
     </button>
+
+    <!-- Navigation Menu -->
     <div class="collapse navbar-collapse" id="mainNav">
-      <ul class="navbar-nav ms-auto align-items-center gap-1">
-        <li class="nav-item"><a class="nav-link {% if request.endpoint == 'public.index' %}active{% endif %}" href="{{ url_for('public.index') }}">Home</a></li>
-        <li class="nav-item"><a class="nav-link {% if request.endpoint == 'public.vehicles' %}active{% endif %}" href="{{ url_for('public.vehicles') }}">Vehicles</a></li>
-        <li class="nav-item"><a class="nav-link {% if request.endpoint == 'public.about' %}active{% endif %}" href="{{ url_for('public.about') }}">About Us</a></li>
-        <li class="nav-item"><a class="nav-link {% if request.endpoint == 'public.contact' %}active{% endif %}" href="{{ url_for('public.contact') }}">Contact</a></li>
-        <li class="nav-item ms-2">
-          {% if current_user.is_authenticated %}
-            <a class="navbar-cta btn" href="{{ url_for('reports.dashboard') }}">Dashboard</a>
-          {% else %}
-            <a class="navbar-cta btn" href="{{ url_for('auth.login') }}">Admin Login</a>
-          {% endif %}
+      <ul class="navbar-nav mx-auto gap-1">
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'public.index' %}active{% endif %}" href="{{ url_for('public.index') }}">HOME</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'public.vehicles' %}active{% endif %}" href="{{ url_for('public.vehicles') }}">VEHICLES</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'public.about' %}active{% endif %}" href="{{ url_for('public.about') }}">ABOUT US</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'public.contact' %}active{% endif %}" href="{{ url_for('public.contact') }}">CONTACT</a>
         </li>
       </ul>
+
+      <!-- Right Side Actions -->
+      <div class="navbar-actions d-flex align-items-center gap-2">
+        <!-- Call Button -->
+        <a href="tel:{% if settings and settings.phone %}{{ settings.phone }}{% else %}+94771234567{% endif %}" class="call-btn d-none d-md-inline-flex">
+          <i class="bi bi-telephone-fill"></i>
+          <div class="call-info">
+            <small>CALL US NOW</small>
+            <span class="call-number">{% if settings and settings.phone %}{{ settings.phone }}{% else %}(+81) 506 869 6590{% endif %}</span>
+          </div>
+        </a>
+
+        <!-- Admin Login (Desktop) -->
+        {% if current_user.is_authenticated %}
+          <a class="btn btn-dashboard-compact" href="{{ url_for('reports.dashboard') }}">Dashboard</a>
+        {% else %}
+          <a class="btn btn-admin-compact" href="{{ url_for('auth.login') }}">Admin Login</a>
+        {% endif %}
+      </div>
     </div>
   </div>
 </nav>
@@ -64,7 +97,7 @@
 {% block content %}{% endblock %}
 
 <!-- Footer -->
-<footer class="public-footer mt-5">
+<footer class="public-footer">
   <div class="container">
     <div class="row g-4">
       <div class="col-md-4">

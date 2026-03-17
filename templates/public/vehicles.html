@@ -2,170 +2,191 @@
 {% block title %}Browse Vehicles — {{ settings.company_name if settings else 'Sonnac Lanka' }}{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="row">
-    <!-- Filter Sidebar -->
-    <div class="col-lg-3 mb-4">
-      <div class="filter-card">
-        <h6><i class="bi bi-funnel me-2"></i>Filter Vehicles</h6>
-        <form method="get" id="vehicle-filter-form">
-          <!-- Search -->
-          <div class="mb-3">
-            <label class="form-label small fw-600">Keyword Search</label>
-            <div class="input-group input-group-sm">
-              <input type="text" class="form-control" name="q" placeholder="Make, model, chassis…" value="{{ filters.q or '' }}">
-              <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
-            </div>
-          </div>
-          <!-- Make -->
-          <div class="mb-3">
-            <label class="form-label small fw-600">Make</label>
-            <select class="form-select form-select-sm" name="make_id" id="public_make" data-model-url="{{ url_for('public.public_models_for_make', make_id=0) }}">
-              <option value="">All Makes</option>
-              {% for mk in makes %}<option value="{{ mk.id }}" {% if filters.make_id == mk.id %}selected{% endif %}>{{ mk.name }}</option>{% endfor %}
-            </select>
-          </div>
-          <!-- Model -->
-          <div class="mb-3">
-            <label class="form-label small fw-600">Model</label>
-            <select class="form-select form-select-sm" name="model" id="public_model" data-placeholder="All Models" data-value-field="name">
-              <option value="">All Models</option>
-              {% for mdl in models %}<option value="{{ mdl.name }}" {% if filters.model == mdl.name %}selected{% endif %}>{{ mdl.name }}</option>{% endfor %}
-            </select>
-          </div>
-          <!-- Body Type -->
-          <div class="mb-3">
-            <label class="form-label small fw-600">Body Type</label>
-            <select class="form-select form-select-sm" name="body_type">
-              <option value="">All Types</option>
-              {% for bt in body_types %}<option value="{{ bt }}" {% if filters.body_type == bt %}selected{% endif %}>{{ bt }}</option>{% endfor %}
-            </select>
-          </div>
-          <!-- Fuel -->
-          <div class="mb-3">
-            <label class="form-label small fw-600">Fuel Type</label>
-            <select class="form-select form-select-sm" name="fuel_type">
-              <option value="">All Fuels</option>
-              {% for ft in fuel_types %}<option value="{{ ft }}" {% if filters.fuel_type == ft %}selected{% endif %}>{{ ft }}</option>{% endfor %}
-            </select>
-          </div>
-          <!-- Transmission -->
-          <div class="mb-3">
-            <label class="form-label small fw-600">Transmission</label>
-            <select class="form-select form-select-sm" name="transmission">
-              <option value="">All</option>
-              {% for tr in transmissions %}<option value="{{ tr }}" {% if filters.transmission == tr %}selected{% endif %}>{{ tr }}</option>{% endfor %}
-            </select>
-          </div>
-          <!-- Year Range -->
-          <div class="mb-3">
-            <label class="form-label small fw-600">Year Range</label>
-            <div class="d-flex gap-1">
-              <input type="number" class="form-control form-control-sm" name="year_min" placeholder="From" value="{{ filters.year_min or '' }}" min="1990" max="2030">
-              <input type="number" class="form-control form-control-sm" name="year_max" placeholder="To" value="{{ filters.year_max or '' }}" min="1990" max="2030">
-            </div>
-          </div>
-          <!-- Price Range -->
-          <div class="mb-3">
-            <label class="form-label small fw-600">Price Range (Rs)</label>
-            <div class="d-flex gap-1">
-              <input type="number" class="form-control form-control-sm" name="price_min" placeholder="Min" value="{{ filters.price_min or '' }}">
-              <input type="number" class="form-control form-control-sm" name="price_max" placeholder="Max" value="{{ filters.price_max or '' }}">
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-search me-1"></i>Apply Filters</button>
-          <a href="{{ url_for('public.vehicles') }}" class="btn btn-outline-secondary btn-sm w-100 mt-2"><i class="bi bi-x-circle me-1"></i>Clear Filters</a>
-        </form>
-      </div>
-    </div>
 
-    <!-- Results -->
-    <div class="col-lg-9">
-      <!-- Header bar -->
-      <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-        <div>
-          <span class="fw-600">{{ pagination.total }} vehicles</span>
-          {% if filters.q or filters.make_id or filters.make %}<span class="text-muted small ms-2">found matching your criteria</span>{% endif %}
-        </div>
-        <div class="d-flex gap-2 align-items-center">
-          <select class="form-select form-select-sm" style="width:auto" name="sort" form="vehicle-filter-form" onchange="document.getElementById('vehicle-filter-form').submit()">
-            <option value="newest" {% if filters.sort == 'newest' %}selected{% endif %}>Newest First</option>
-            <option value="price_asc" {% if filters.sort == 'price_asc' %}selected{% endif %}>Price: Low → High</option>
-            <option value="price_desc" {% if filters.sort == 'price_desc' %}selected{% endif %}>Price: High → Low</option>
-            <option value="year_desc" {% if filters.sort == 'year_desc' %}selected{% endif %}>Year: Newest</option>
-            <option value="mileage_asc" {% if filters.sort == 'mileage_asc' %}selected{% endif %}>Lowest Mileage</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Grid -->
-      {% if vehicles %}
-      <div class="row g-4">
-        {% for v in vehicles %}
-        <div class="col-sm-6 col-xl-4">
-          <div class="card vehicle-card h-100">
-            <a href="{{ url_for('public.vehicle_detail', vehicle_id=v.id) }}" class="text-decoration-none">
-              {% if v.images %}
-                {% set primary = v.images | selectattr('is_primary') | first %}
-                {% set img = primary if primary else v.images[0] %}
-                <img src="{{ url_for('static', filename='uploads/vehicles/' + img.filename) }}" class="card-img-top" alt="{{ v.make }} {{ v.model }}">
-              {% else %}
-                <div class="vehicle-img-placeholder"><i class="bi bi-car-front"></i></div>
-              {% endif %}
-            </a>
-            <div class="card-body">
-              <div class="d-flex justify-content-between mb-1">
-                <a href="{{ url_for('public.vehicle_detail', vehicle_id=v.id) }}" class="text-decoration-none">
-                  <h6 class="card-title mb-0">{{ v.year }} {{ v.make }} {{ v.model }}</h6>
-                </a>
-                {% if v.is_featured %}<span class="vehicle-badge bg-warning text-dark">Featured</span>{% endif %}
-              </div>
-              <div class="price-tag mb-2" style="font-size:1.1rem">
-                {% if v.selling_price %}Rs {{ "{:,.0f}".format(v.selling_price) }}{% else %}<span class="text-muted">On Request</span>{% endif %}
-              </div>
-              <div class="d-flex flex-wrap gap-1 mb-2">
-                <span class="spec-chip"><i class="bi bi-fuel-pump"></i> {{ v.fuel_type or '—' }}</span>
-                <span class="spec-chip"><i class="bi bi-gear"></i> {{ v.transmission or '—' }}</span>
-                {% if v.mileage %}<span class="spec-chip"><i class="bi bi-speedometer2"></i> {{ "{:,}".format(v.mileage) }} km</span>{% endif %}
-              </div>
-              <a href="{{ url_for('public.vehicle_detail', vehicle_id=v.id) }}" class="btn btn-primary btn-sm w-100">View Details</a>
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-
-      <!-- Pagination -->
-      {% if pagination.pages > 1 %}
-      <nav class="mt-4">
-        <ul class="pagination justify-content-center">
-          {% if pagination.has_prev %}
-          <li class="page-item"><a class="page-link" href="{{ url_for('public.vehicles', page=pagination.prev_num, **filters) }}"><i class="bi bi-chevron-left"></i></a></li>
-          {% endif %}
-          {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-            {% if p %}
-              <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                <a class="page-link" href="{{ url_for('public.vehicles', page=p, **filters) }}">{{ p }}</a>
-              </li>
-            {% else %}
-              <li class="page-item disabled"><span class="page-link">…</span></li>
-            {% endif %}
-          {% endfor %}
-          {% if pagination.has_next %}
-          <li class="page-item"><a class="page-link" href="{{ url_for('public.vehicles', page=pagination.next_num, **filters) }}"><i class="bi bi-chevron-right"></i></a></li>
-          {% endif %}
-        </ul>
-      </nav>
-      {% endif %}
-
-      {% else %}
-      <div class="text-center py-5 text-muted">
-        <i class="bi bi-search fs-1 d-block mb-3"></i>
-        <h5>No vehicles found</h5>
-        <p class="small">Try adjusting your filters or <a href="{{ url_for('public.vehicles') }}">clear all filters</a></p>
-      </div>
-      {% endif %}
-    </div>
+<!-- Page Hero -->
+<div class="lux-page-hero">
+  <div class="container">
+    <div class="lux-eyebrow">Our Inventory</div>
+    <h1>Browse Vehicles</h1>
+    <p>Explore our curated collection of quality pre-owned and imported vehicles</p>
   </div>
 </div>
+
+<div class="lux-vehicles-wrap">
+  <div class="container">
+    <div class="row g-4">
+
+      <!-- Filter Sidebar -->
+      <div class="col-lg-3 mb-2">
+        <div class="lux-filter">
+          <div class="lux-filter-title"><i class="bi bi-sliders"></i> Filter Vehicles</div>
+          <form method="get" id="vehicle-filter-form">
+
+            <!-- Keyword -->
+            <div class="mb-3">
+              <label class="lux-filter-label">Keyword Search</label>
+              <div class="input-group">
+                <input type="text" class="form-control" name="q" placeholder="Make, model, chassis…" value="{{ filters.q or '' }}">
+                <button class="lux-search-btn" type="submit"><i class="bi bi-search"></i></button>
+              </div>
+            </div>
+
+            <!-- Make -->
+            <div class="mb-3">
+              <label class="lux-filter-label">Make</label>
+              <select class="form-select" name="make_id" id="public_make" data-model-url="{{ url_for('public.public_models_for_make', make_id=0) }}">
+                <option value="">All Makes</option>
+                {% for mk in makes %}<option value="{{ mk.id }}" {% if filters.make_id == mk.id %}selected{% endif %}>{{ mk.name }}</option>{% endfor %}
+              </select>
+            </div>
+
+            <!-- Model -->
+            <div class="mb-3">
+              <label class="lux-filter-label">Model</label>
+              <select class="form-select" name="model" id="public_model" data-placeholder="All Models" data-value-field="name">
+                <option value="">All Models</option>
+                {% for mdl in models %}<option value="{{ mdl.name }}" {% if filters.model == mdl.name %}selected{% endif %}>{{ mdl.name }}</option>{% endfor %}
+              </select>
+            </div>
+
+            <!-- Body Type -->
+            <div class="mb-3">
+              <label class="lux-filter-label">Body Type</label>
+              <select class="form-select" name="body_type">
+                <option value="">All Types</option>
+                {% for bt in body_types %}<option value="{{ bt }}" {% if filters.body_type == bt %}selected{% endif %}>{{ bt }}</option>{% endfor %}
+              </select>
+            </div>
+
+            <!-- Fuel -->
+            <div class="mb-3">
+              <label class="lux-filter-label">Fuel Type</label>
+              <select class="form-select" name="fuel_type">
+                <option value="">All Fuels</option>
+                {% for ft in fuel_types %}<option value="{{ ft }}" {% if filters.fuel_type == ft %}selected{% endif %}>{{ ft }}</option>{% endfor %}
+              </select>
+            </div>
+
+            <!-- Transmission -->
+            <div class="mb-3">
+              <label class="lux-filter-label">Transmission</label>
+              <select class="form-select" name="transmission">
+                <option value="">All</option>
+                {% for tr in transmissions %}<option value="{{ tr }}" {% if filters.transmission == tr %}selected{% endif %}>{{ tr }}</option>{% endfor %}
+              </select>
+            </div>
+
+            <!-- Year Range -->
+            <div class="mb-3">
+              <label class="lux-filter-label">Year Range</label>
+              <div class="d-flex gap-1">
+                <input type="number" class="form-control" name="year_min" placeholder="From" value="{{ filters.year_min or '' }}" min="1990" max="2030">
+                <input type="number" class="form-control" name="year_max" placeholder="To"   value="{{ filters.year_max or '' }}" min="1990" max="2030">
+              </div>
+            </div>
+
+            <!-- Price Range -->
+            <div class="mb-4">
+              <label class="lux-filter-label">Price Range (Rs)</label>
+              <div class="d-flex gap-1">
+                <input type="number" class="form-control" name="price_min" placeholder="Min" value="{{ filters.price_min or '' }}">
+                <input type="number" class="form-control" name="price_max" placeholder="Max" value="{{ filters.price_max or '' }}">
+              </div>
+            </div>
+
+            <button type="submit" class="lux-apply-btn"><i class="bi bi-search me-1"></i>Apply Filters</button>
+            <a href="{{ url_for('public.vehicles') }}" class="lux-clear-btn"><i class="bi bi-x-circle me-1"></i>Clear Filters</a>
+          </form>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="col-lg-9">
+
+        <!-- Results bar -->
+        <div class="lux-results-bar">
+          <div class="lux-results-count">
+            <strong>{{ pagination.total }}</strong> vehicles found
+            {% if filters.q or filters.make_id or filters.make %}<span class="ms-1">matching your criteria</span>{% endif %}
+          </div>
+          <select class="lux-sort-select" name="sort" form="vehicle-filter-form" onchange="document.getElementById('vehicle-filter-form').submit()">
+            <option value="newest"     {% if filters.sort == 'newest'     %}selected{% endif %}>Newest First</option>
+            <option value="price_asc"  {% if filters.sort == 'price_asc'  %}selected{% endif %}>Price: Low → High</option>
+            <option value="price_desc" {% if filters.sort == 'price_desc' %}selected{% endif %}>Price: High → Low</option>
+            <option value="year_desc"  {% if filters.sort == 'year_desc'  %}selected{% endif %}>Year: Newest</option>
+            <option value="mileage_asc"{% if filters.sort == 'mileage_asc'%}selected{% endif %}>Lowest Mileage</option>
+          </select>
+        </div>
+
+        {% if vehicles %}
+        <div class="row g-4">
+          {% for v in vehicles %}
+          <div class="col-sm-6 col-xl-4">
+            <a href="{{ url_for('public.vehicle_detail', vehicle_id=v.id) }}" class="text-decoration-none d-block h-100">
+              <div class="sl-vcard h-100">
+                <div class="sl-vcard-img-wrap">
+                  {% if v.images %}
+                    {% set primary = v.images | selectattr('is_primary') | first %}
+                    {% set img = primary if primary else v.images[0] %}
+                    <img src="{{ url_for('static', filename='uploads/vehicles/' + img.filename) }}" alt="{{ v.make }} {{ v.model }}">
+                  {% else %}
+                    <div class="sl-vcard-placeholder"><i class="bi bi-car-front"></i></div>
+                  {% endif %}
+                  {% if v.is_featured %}<div class="sl-vcard-badge">Featured</div>{% endif %}
+                </div>
+                <div class="sl-vcard-body">
+                  <div class="sl-vcard-make">{{ v.make }}</div>
+                  <div class="sl-vcard-name">{{ v.year }} {{ v.model }}</div>
+                  <div class="sl-chips">
+                    <span class="sl-chip"><i class="bi bi-fuel-pump"></i>{{ v.fuel_type or '—' }}</span>
+                    <span class="sl-chip"><i class="bi bi-gear"></i>{{ v.transmission or '—' }}</span>
+                    {% if v.mileage %}<span class="sl-chip"><i class="bi bi-speedometer2"></i>{{ "{:,}".format(v.mileage) }} km</span>{% endif %}
+                  </div>
+                  <div class="sl-price">
+                    {% if v.selling_price %}Rs {{ "{:,.0f}".format(v.selling_price) }}{% else %}<span class="call-price">On Request</span>{% endif %}
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav class="mt-5">
+          <ul class="pagination lux-pagination justify-content-center gap-1">
+            {% if pagination.has_prev %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('public.vehicles', page=pagination.prev_num, **filters) }}"><i class="bi bi-chevron-left"></i></a></li>
+            {% endif %}
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+              {% if p %}
+                <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                  <a class="page-link" href="{{ url_for('public.vehicles', page=p, **filters) }}">{{ p }}</a>
+                </li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+              {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('public.vehicles', page=pagination.next_num, **filters) }}"><i class="bi bi-chevron-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="lux-empty">
+          <i class="bi bi-car-front"></i>
+          <h5>No vehicles found</h5>
+          <p>Try adjusting your filters or <a href="{{ url_for('public.vehicles') }}">clear all filters</a></p>
+        </div>
+        {% endif %}
+
+      </div><!-- /col -->
+    </div><!-- /row -->
+  </div><!-- /container -->
+</div>
+
 {% endblock %}
+
