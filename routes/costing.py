@@ -48,6 +48,7 @@ def cost_sheet(vehicle_id):
         cs.agent_fees = float(request.form.get('agent_fees') or 0)
         cs.clearing_charges = float(request.form.get('clearing_charges') or 0)
         cs.inland_transport = float(request.form.get('inland_transport') or 0)
+        cs.logistics_tax = float(request.form.get('logistics_tax') or 0)
         cs.other_costs = float(request.form.get('other_costs') or 0)
         cs.other_costs_note = request.form.get('other_costs_note')
         cs.target_margin_pct = float(request.form.get('target_margin_pct') or 15)

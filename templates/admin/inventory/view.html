@@ -135,13 +135,21 @@
     <div class="d-grid gap-2">
       <a href="{{ url_for('quotations.new_quotation') }}?vehicle_id={{ vehicle.id }}" class="btn btn-outline-primary"><i class="bi bi-file-earmark-plus me-2"></i>Create Quotation</a>
       <a href="{{ url_for('sales.new_sale') }}?vehicle_id={{ vehicle.id }}" class="btn btn-outline-success"><i class="bi bi-plus-circle me-2"></i>Record Sale</a>
-      {% if current_user.has_permission('inventory','archive') %}
-      <a href="{{ url_for('inventory.archive_vehicle', vehicle_id=vehicle.id) }}"
-         class="btn btn-outline-{{ 'secondary' if not vehicle.is_archived else 'warning' }}"
-         data-confirm="{{ 'Archive' if not vehicle.is_archived else 'Restore' }} this vehicle?">
-        <i class="bi bi-{{ 'archive' if not vehicle.is_archived else 'arrow-counterclockwise' }} me-2"></i>
-        {{ 'Archive' if not vehicle.is_archived else 'Restore' }} Vehicle
-      </a>
+      {% if current_user.has_permission('inventory','delete') %}
+      <form method="post" action="{{ url_for('inventory.archive_vehicle', vehicle_id=vehicle.id) }}" class="d-grid">
+        <button type="submit"
+                class="btn btn-outline-{{ 'secondary' if not vehicle.is_archived else 'warning' }}"
+                data-confirm="{{ 'Archive' if not vehicle.is_archived else 'Restore' }} this vehicle?">
+          <i class="bi bi-{{ 'archive' if not vehicle.is_archived else 'arrow-counterclockwise' }} me-2"></i>
+          {{ 'Archive' if not vehicle.is_archived else 'Restore' }} Vehicle
+        </button>
+      </form>
+      <form method="post" action="{{ url_for('inventory.delete_vehicle', vehicle_id=vehicle.id) }}" class="d-grid">
+        <button type="submit" class="btn btn-danger"
+                data-confirm="Delete this vehicle and all related records? This cannot be undone.">
+          <i class="bi bi-trash me-2"></i>Delete Vehicle
+        </button>
+      </form>
       {% endif %}
     </div>
   </div>

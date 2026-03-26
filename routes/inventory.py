@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from types import SimpleNamespace
-from models import db, Vehicle, VehicleImage, VehicleDocument, SystemSettings, VehicleMake, VehicleModel
+from models import db, Vehicle, VehicleImage, VehicleDocument, SystemSettings, VehicleMake, VehicleModel, Sale, Quotation, Inquiry
 from utils import allowed_image, allowed_doc, save_upload, log_action
 import io
 
@@ -288,6 +288,59 @@ def archive_vehicle(vehicle_id):
     action = 'archived' if vehicle.is_archived else 'restored'
     log_action(current_user.id, action, 'inventory', vehicle.id, f'{action.title()} vehicle')
     flash(f'Vehicle {action} successfully.', 'success')
+    return redirect(url_for('inventory.list_vehicles'))
+
+
+@inventory_bp.route('/<int:vehicle_id>/delete', methods=['POST'])
+@login_required
+def delete_vehicle(vehicle_id):
+    if not require_perm('delete'):
+        return redirect(url_for('inventory.list_vehicles'))
+
+    vehicle = Vehicle.query.get_or_404(vehicle_id)
+    vehicle_label = f"{vehicle.year} {vehicle.make} {vehicle.model}".strip()
+
+    # Delete uploaded files first (ignore missing files)
+    upload_root = current_app.config.get('UPLOAD_FOLDER', '')
+    for img in vehicle.images:
+        img_path = os.path.join(upload_root, 'vehicles', img.filename)
+        if os.path.exists(img_path):
+            os.remove(img_path)
+    for doc in vehicle.documents:
+        doc_path = os.path.join(upload_root, 'docs', doc.filename)
+        if os.path.exists(doc_path):
+            os.remove(doc_path)
+
+    try:
+        # Related entities that don't cascade from vehicle by default
+        related_sales = Sale.query.filter_by(vehicle_id=vehicle.id).all()
+        for sale in related_sales:
+            db.session.delete(sale)
+
+        Inquiry.query.filter_by(vehicle_id=vehicle.id).delete(synchronize_session=False)
+
+        related_quote_ids = [q.id for q in Quotation.query.with_entities(Quotation.id).filter_by(vehicle_id=vehicle.id).all()]
+        if related_quote_ids:
+            # Avoid FK conflicts from sale->quotation and quotation self-references
+            Sale.query.filter(Sale.quotation_id.in_(related_quote_ids)).update(
+                {Sale.quotation_id: None}, synchronize_session=False
+            )
+            Quotation.query.filter(Quotation.parent_id.in_(related_quote_ids)).update(
+                {Quotation.parent_id: None}, synchronize_session=False
+            )
+            related_quotes = Quotation.query.filter(Quotation.id.in_(related_quote_ids)).all()
+            for quote in related_quotes:
+                db.session.delete(quote)
+
+        db.session.delete(vehicle)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash('Unable to delete vehicle due to related records. Please try again.', 'danger')
+        return redirect(url_for('inventory.view_vehicle', vehicle_id=vehicle_id))
+
+    log_action(current_user.id, 'delete', 'inventory', vehicle_id, f'Deleted vehicle {vehicle_label}')
+    flash(f'Vehicle {vehicle_label} and related records were deleted successfully.', 'success')
     return redirect(url_for('inventory.list_vehicles'))
 
 

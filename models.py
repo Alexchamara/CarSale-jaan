@@ -208,6 +208,7 @@ class CostSheet(db.Model):
     agent_fees = db.Column(db.Float, default=0)
     clearing_charges = db.Column(db.Float, default=0)
     inland_transport = db.Column(db.Float, default=0)
+    logistics_tax = db.Column(db.Float, default=0)
     other_costs = db.Column(db.Float, default=0)
     other_costs_note = db.Column(db.String(200))
     total_landed_cost = db.Column(db.Float, default=0)
@@ -227,6 +228,7 @@ class CostSheet(db.Model):
             self.port_handling or 0, self.freight or 0,
             self.insurance_import or 0, self.agent_fees or 0,
             self.clearing_charges or 0, self.inland_transport or 0,
+            self.logistics_tax or 0,
             self.other_costs or 0,
         ])
         return total

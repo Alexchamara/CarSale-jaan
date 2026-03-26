@@ -54,6 +54,9 @@
             <input type="number" class="form-control cost-input" name="purchase_price_fc" id="purchase_price_fc" value="{{ cost_sheet.purchase_price_fc if cost_sheet else '' }}" step="0.01">
           </div>
         </div>
+        <div class="text-end mt-2 text-muted small">
+          Rate × Price: <strong id="purchase-lkr-display">Rs 0.00</strong>
+        </div>
       </div>
     </div>
 
@@ -65,7 +68,7 @@
           {% set lc_fields = [
             ('lc_value','LC Value (Rs)'),
             ('bank_charges','Bank Charges'),
-            ('lc_interest','LC Interest'),
+            ('lc_interest','Bank Interest'),
           ] %}
           {% for fname, flabel in lc_fields %}
           <div class="col-md-4">
@@ -107,6 +110,7 @@
             ('port_handling','Port Handling'),('freight','Freight'),
             ('insurance_import','Insurance'),('agent_fees','Agent Fees'),
             ('clearing_charges','Clearing Charges'),('inland_transport','Inland Transport'),
+            ('logistics_tax','Tax'),
             ('other_costs','Other Costs'),
           ] %}
           {% for fname, flabel in logis_fields %}

@@ -48,8 +48,8 @@
       <div class="col-md-2 d-flex gap-1">
         <button class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
         <a href="{{ url_for('inventory.list_vehicles') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
-        {% if current_user.has_permission('inventory','archive') %}
-        <a href="{{ url_for('inventory.list_vehicles', show_archived=1) }}" class="btn btn-outline-warning btn-sm {% if request.args.get('show_archived') %}active{% endif %}">Archived</a>
+        {% if current_user.has_permission('inventory','delete') %}
+        <a href="{{ url_for('inventory.list_vehicles', archived=1) }}" class="btn btn-outline-warning btn-sm {% if request.args.get('archived') == '1' %}active{% endif %}">Archived</a>
         {% endif %}
       </div>
     </form>
@@ -106,6 +106,14 @@
               {% if current_user.has_permission('inventory','edit') %}
               <a href="{{ url_for('inventory.edit_vehicle', vehicle_id=v.id) }}" class="btn btn-outline-secondary action-btn" title="Edit"><i class="bi bi-pencil"></i></a>
               <a href="{{ url_for('costing.cost_sheet', vehicle_id=v.id) }}" class="btn btn-outline-info action-btn" title="Costing"><i class="bi bi-calculator"></i></a>
+              {% endif %}
+              {% if current_user.has_permission('inventory','delete') %}
+              <form method="post" action="{{ url_for('inventory.delete_vehicle', vehicle_id=v.id) }}" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger action-btn" title="Delete"
+                        data-confirm="Delete this vehicle and all related records? This cannot be undone.">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
               {% endif %}
             </div>
           </td>

@@ -238,6 +238,8 @@ function calcCostTotals() {
   });
   const exRate = parseFloat(document.getElementById('exchange_rate')?.value) || 1;
   const purFC = parseFloat(document.getElementById('purchase_price_fc')?.value) || 0;
+  const purchaseLkr = purFC * exRate;
+  setEl('purchase-lkr-display', formatCurrency(purchaseLkr));
   const totalLanded = purFC * exRate + total;
   setEl('cost-total-display', formatCurrency(totalLanded));
   const marginPct = parseFloat(document.getElementById('target_margin_pct')?.value) || 0;
