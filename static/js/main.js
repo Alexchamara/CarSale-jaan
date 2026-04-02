@@ -234,13 +234,15 @@ document.addEventListener('DOMContentLoaded', () => {
 function calcCostTotals() {
   let total = 0;
   document.querySelectorAll('.cost-input').forEach(inp => {
+    // Purchase price is converted separately; LC value is informational and not part of landed total.
+    if (inp.id === 'purchase_price_fc' || inp.name === 'lc_value') return;
     total += parseFloat(inp.value) || 0;
   });
   const exRate = parseFloat(document.getElementById('exchange_rate')?.value) || 1;
   const purFC = parseFloat(document.getElementById('purchase_price_fc')?.value) || 0;
   const purchaseLkr = purFC * exRate;
   setEl('purchase-lkr-display', formatCurrency(purchaseLkr));
-  const totalLanded = purFC * exRate + total;
+  const totalLanded = purchaseLkr + total;
   setEl('cost-total-display', formatCurrency(totalLanded));
   const marginPct = parseFloat(document.getElementById('target_margin_pct')?.value) || 0;
   const targetPrice = totalLanded / (1 - marginPct / 100);
