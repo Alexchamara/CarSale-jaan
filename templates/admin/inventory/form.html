@@ -173,8 +173,8 @@
             {% endfor %}
           </div>
           {% endif %}
-          <label class="form-label small">Upload New Images</label>
-          <input type="file" class="form-control form-control-sm" name="images" multiple accept="image/*">
+          <label class="form-label small">Upload New Images{% if not vehicle %} <span class="text-danger">*</span>{% endif %}</label>
+          <input type="file" class="form-control form-control-sm" name="images" multiple accept="image/*"{% if not vehicle %} required{% endif %}>
           <div class="form-text">JPEG, PNG. Max 16MB each. First image becomes primary if none exists.</div>
         </div>
       </div>
