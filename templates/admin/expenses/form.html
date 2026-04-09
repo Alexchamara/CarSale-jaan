@@ -1,0 +1,57 @@
+{% extends 'admin/base.html' %}
+{% block title %}{{ 'Edit Expense' if expense else 'Add Expense' }}{% endblock %}
+{% block page_title %}Daily Expenses{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-cash-stack me-2"></i>{{ 'Edit Expense' if expense else 'Add Daily Expense' }}</h1>
+    <nav aria-label="breadcrumb"><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('expenses.list_expenses') }}">Expenses</a></li>
+      <li class="breadcrumb-item active">{{ 'Edit' if expense else 'New' }}</li>
+    </ol></nav>
+  </div>
+  <a href="{{ url_for('expenses.list_expenses') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="admin-card">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Expense Date</label>
+        <input type="date" class="form-control" name="expense_date" value="{{ expense.expense_date.isoformat() if expense else today_str }}" required>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Payment Method</label>
+        <select class="form-select" name="payment_method" required>
+          <option value="">Select Method</option>
+          {% for m in payment_methods %}
+          <option value="{{ m }}" {% if expense and expense.payment_method == m %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-8">
+        <label class="form-label">Reason</label>
+        <input type="text" class="form-control" name="description" value="{{ expense.description if expense else '' }}" maxlength="255" required>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Amount</label>
+        <div class="input-group">
+          <span class="input-group-text">Rs</span>
+          <input type="number" class="form-control" name="amount" value="{{ '{:.2f}'.format(expense.amount) if expense else '' }}" step="0.01" min="0.01" required>
+        </div>
+      </div>
+
+      <div class="col-12 d-flex gap-2 pt-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-save me-1"></i>Save
+        </button>
+        <a href="{{ url_for('expenses.list_expenses') }}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

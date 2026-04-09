@@ -18,6 +18,7 @@ ROLE_PERMISSIONS = {
         'sales':     ['view', 'create', 'edit', 'delete'],
         'customers': ['view', 'create', 'edit', 'delete'],
         'reports':   ['view'],
+        'expenses':  ['view', 'create', 'edit', 'delete'],
         'users':     ['view', 'create', 'edit', 'delete'],
         'settings':  ['view', 'edit'],
     },
@@ -29,6 +30,7 @@ ROLE_PERMISSIONS = {
         'sales':     ['view', 'create', 'edit', 'delete'],
         'customers': ['view', 'create', 'edit', 'delete'],
         'reports':   ['view'],
+        'expenses':  ['view', 'create', 'edit'],
         'users':     ['view'],
     },
     'sales_executive': {
@@ -46,6 +48,7 @@ ROLE_PERMISSIONS = {
         'sales':     ['view'],
         'customers': ['view'],
         'reports':   ['view'],
+        'expenses':  ['view', 'create', 'edit', 'delete'],
     },
     'viewer': {
         # Read-only, inventory only
@@ -383,6 +386,17 @@ class Payment(db.Model):
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+
+# ─── Expense ──────────────────────────────────────────────────────────────────
+class Expense(db.Model):
+    __tablename__ = 'expenses'
+    id = db.Column(db.Integer, primary_key=True)
+    expense_date = db.Column(db.Date, nullable=False, index=True)
+    description = db.Column(db.Text, nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    payment_method = db.Column(db.String(20), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # ─── Inquiry ──────────────────────────────────────────────────────────────────
 class Inquiry(db.Model):
