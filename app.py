@@ -26,6 +26,7 @@ def create_app(config_class=Config):
     from routes.sales import sales_bp
     from routes.customers import customers_bp
     from routes.reports import reports_bp
+    from routes.expenses import expenses_bp
     from routes.users import users_bp
     from routes.settings import settings_bp
 
@@ -38,6 +39,7 @@ def create_app(config_class=Config):
     app.register_blueprint(sales_bp, url_prefix='/admin/sales')
     app.register_blueprint(customers_bp, url_prefix='/admin/customers')
     app.register_blueprint(reports_bp, url_prefix='/admin/reports')
+    app.register_blueprint(expenses_bp, url_prefix='/admin/expenses')
     app.register_blueprint(users_bp, url_prefix='/admin/users')
     app.register_blueprint(settings_bp, url_prefix='/admin/settings')
 

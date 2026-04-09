@@ -4,11 +4,45 @@ Run once: python init_db.py
 """
 from app import create_app
 from models import db, User, SystemSettings
+from sqlalchemy import inspect, text
+
+
+def ensure_expenses_schema(engine):
+    insp = inspect(engine)
+    if 'expenses' not in insp.get_table_names():
+        return
+
+    cols = [c['name'] for c in insp.get_columns('expenses')]
+    if 'category' not in cols:
+        return
+
+    with engine.begin() as conn:
+        conn.execute(text('''
+            CREATE TABLE expenses_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                expense_date DATE NOT NULL,
+                description TEXT NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                payment_method VARCHAR(20) NOT NULL,
+                created_at DATETIME
+            )
+        '''))
+        conn.execute(text('''
+            INSERT INTO expenses_new (id, expense_date, description, amount, payment_method, created_at)
+            SELECT id, expense_date, description, amount, payment_method, created_at
+            FROM expenses
+        '''))
+        conn.execute(text('DROP TABLE expenses'))
+        conn.execute(text('ALTER TABLE expenses_new RENAME TO expenses'))
+        conn.execute(text('CREATE INDEX IF NOT EXISTS ix_expenses_expense_date ON expenses(expense_date)'))
+
+    print('✅  Expenses table schema upgraded (removed obsolete category column).')
 
 app = create_app()
 
 with app.app_context():
     db.create_all()
+    ensure_expenses_schema(db.engine)
     print("✅  Database tables created.")
 
     # Seed admin user if not exists
