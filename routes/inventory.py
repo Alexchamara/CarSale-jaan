@@ -171,12 +171,20 @@ def new_vehicle():
 
         # Handle image uploads
         images = request.files.getlist('images')
-        for i, img in enumerate(images):
-            if img and img.filename and allowed_image(img.filename):
-                fname = save_upload(img, 'vehicles')
-                vi = VehicleImage(vehicle_id=v.id, filename=fname,
-                                  is_primary=(i == 0), display_order=i)
-                db.session.add(vi)
+        valid_images = [img for img in images if img and img.filename and allowed_image(img.filename)]
+        if not valid_images:
+            db.session.delete(v)
+            db.session.commit()
+            flash('At least one image is required.', 'danger')
+            return render_template('admin/inventory/form.html', vehicle=form_vehicle,
+                                   body_types=BODY_TYPES, fuel_types=FUEL_TYPES,
+                                   transmissions=TRANSMISSIONS, conditions=CONDITIONS, statuses=STATUSES,
+                                   makes=makes, models=models)
+        for i, img in enumerate(valid_images):
+            fname = save_upload(img, 'vehicles')
+            vi = VehicleImage(vehicle_id=v.id, filename=fname,
+                              is_primary=(i == 0), display_order=i)
+            db.session.add(vi)
 
         db.session.commit()
         log_action(current_user.id, 'create', 'inventory', v.id, f'Created vehicle {v.make} {v.model}')
@@ -358,12 +366,20 @@ def set_primary_image(vehicle_id, img_id):
 @login_required
 def delete_image(vehicle_id, img_id):
     img = VehicleImage.query.get_or_404(img_id)
+    was_primary = img.is_primary
     path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'vehicles', img.filename)
     if os.path.exists(path):
         os.remove(path)
     db.session.delete(img)
+    db.session.flush()
+    # If the deleted image was primary, promote the next available image
+    if was_primary:
+        next_img = VehicleImage.query.filter_by(vehicle_id=vehicle_id).first()
+        if next_img:
+            next_img.is_primary = True
     db.session.commit()
-    return jsonify({'success': True})
+    flash('Image deleted.', 'success')
+    return redirect(url_for('inventory.edit_vehicle', vehicle_id=vehicle_id))
 
 
 @inventory_bp.route('/<int:vehicle_id>/docs/upload', methods=['POST'])

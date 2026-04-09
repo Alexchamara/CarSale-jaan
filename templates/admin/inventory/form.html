@@ -157,20 +157,24 @@
                 <img src="{{ url_for('static', filename='uploads/vehicles/' + img.filename) }}" class="img-thumbnail w-100" style="height:80px;object-fit:cover">
                 <div class="d-flex gap-1 mt-1">
                   {% if not img.is_primary %}
-                  <a href="{{ url_for('inventory.set_primary_image', vehicle_id=vehicle.id, img_id=img.id) }}" class="btn btn-xs btn-outline-primary" style="font-size:0.65rem;padding:1px 5px" title="Set Primary"><i class="bi bi-star"></i></a>
+                  <form method="post" action="{{ url_for('inventory.set_primary_image', vehicle_id=vehicle.id, img_id=img.id) }}" style="display:inline">
+                    <button type="submit" class="btn btn-xs btn-outline-primary" style="font-size:0.65rem;padding:1px 5px" title="Set Primary"><i class="bi bi-star"></i></button>
+                  </form>
                   {% else %}
                   <span class="badge bg-warning text-dark" style="font-size:0.65rem">Primary</span>
                   {% endif %}
-                  <a href="{{ url_for('inventory.delete_image', vehicle_id=vehicle.id, img_id=img.id) }}" class="btn btn-xs btn-outline-danger" style="font-size:0.65rem;padding:1px 5px"
-                     data-confirm="Delete this image?" title="Delete"><i class="bi bi-trash"></i></a>
+                  <form method="post" action="{{ url_for('inventory.delete_image', vehicle_id=vehicle.id, img_id=img.id) }}" style="display:inline"
+                        onsubmit="return confirm('Delete this image?')">
+                    <button type="submit" class="btn btn-xs btn-outline-danger" style="font-size:0.65rem;padding:1px 5px" title="Delete"><i class="bi bi-trash"></i></button>
+                  </form>
                 </div>
               </div>
             </div>
             {% endfor %}
           </div>
           {% endif %}
-          <label class="form-label small">Upload New Images</label>
-          <input type="file" class="form-control form-control-sm" name="images" multiple accept="image/*">
+          <label class="form-label small">Upload New Images{% if not vehicle %} <span class="text-danger">*</span>{% endif %}</label>
+          <input type="file" class="form-control form-control-sm" name="images" multiple accept="image/*"{% if not vehicle %} required{% endif %}>
           <div class="form-text">JPEG, PNG. Max 16MB each. First image becomes primary if none exists.</div>
         </div>
       </div>
