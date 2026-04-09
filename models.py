@@ -236,7 +236,9 @@ class CostSheet(db.Model):
     def calc_target_price(self):
         total = self.calc_total()
         margin = self.target_margin_pct or 15
-        return total * (1 + margin / 100)
+        if margin >= 100:
+            return 0
+        return total / (1 - margin / 100)
 
 # ─── Customer ─────────────────────────────────────────────────────────────────
 class Customer(db.Model):

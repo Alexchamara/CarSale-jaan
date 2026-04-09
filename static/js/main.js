@@ -245,7 +245,7 @@ function calcCostTotals() {
   const totalLanded = purchaseLkr + total;
   setEl('cost-total-display', formatCurrency(totalLanded));
   const marginPct = parseFloat(document.getElementById('target_margin_pct')?.value) || 0;
-  const targetPrice = totalLanded / (1 - marginPct / 100);
+  const targetPrice = marginPct >= 100 ? 0 : (totalLanded / (1 - marginPct / 100));
   setEl('target-price-display', formatCurrency(targetPrice));
 }
 
