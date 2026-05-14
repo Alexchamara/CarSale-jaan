@@ -47,6 +47,123 @@
     <!-- Document Preview card -->
     <div class="admin-card mb-4">
       <div class="card-body">
+        {% if quotation.doc_type == 'tax_invoice' %}
+        {% set logo_src = url_for('static', filename='uploads/logos/' + settings.logo) if settings and settings.logo else url_for('static', filename='logo.png') %}
+        {% set currency = quotation.currency or (settings.currency if settings else 'LKR') %}
+        {% set v = quotation.vehicle %}
+        {% set tax_rate = quotation.tax_rate or 0 %}
+        <div class="tax-invoice-preview">
+          <div class="tax-invoice-meta">
+            <div>{{ quotation.quote_no }}</div>
+            <div>{{ settings.company_name if settings else 'Sonnac Lanka Enterprises' }} {{ quotation.doc_type_label.upper() }}</div>
+            <div>{{ quotation.created_at.strftime('%Y-%m-%d') if quotation.created_at else '' }}</div>
+          </div>
+
+          <div class="tax-invoice-brand">
+            <div class="tax-invoice-logo">
+              <img src="{{ logo_src }}" alt="{{ settings.company_name if settings else 'Sonnac Lanka Enterprises' }} logo">
+            </div>
+            <div class="tax-invoice-brand-text">
+              <div class="brand-name">{{ settings.company_name if settings else 'Sonnac Lanka Enterprises' }}</div>
+              <div class="brand-tagline">{{ settings.company_tagline if settings else 'Importers and Dealers in Japanese Motor Vehicles' }}</div>
+              <div class="brand-address">{{ settings.company_address if settings else 'Negombo, Sri Lanka' }}</div>
+              <div class="brand-contact">{{ settings.company_phone if settings else '' }}</div>
+              <div class="brand-contact">{{ settings.company_email if settings else '' }}</div>
+            </div>
+          </div>
+
+          <div class="tax-invoice-divider"></div>
+
+          <div class="tax-invoice-top">
+            <div class="tax-invoice-to">
+              <div class="to-label">To</div>
+              <div class="to-lines">
+                <div class="tax-line">{{ quotation.customer.name if quotation.customer else '—' }}</div>
+                <div class="tax-line">{{ quotation.customer.address if quotation.customer and quotation.customer.address else '' }}</div>
+                <div class="tax-line">{{ quotation.customer.phone if quotation.customer and quotation.customer.phone else '' }}</div>
+              </div>
+            </div>
+            <div class="tax-invoice-info">
+              <div class="info-row">
+                <div class="info-label">VAT No.</div>
+                <div class="tax-line"></div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">Date</div>
+                <div class="tax-line">{{ quotation.created_at.strftime('%Y-%m-%d') if quotation.created_at else '' }}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">Invoice No.</div>
+                <div class="tax-line">{{ quotation.quote_no }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tax-invoice-title">TAX INVOICE</div>
+
+          <div class="tax-invoice-details">
+            <div class="detail-row">
+              <div class="detail-label">Make</div>
+              <div class="detail-colon">:</div>
+              <div class="detail-value"><span class="tax-line">{{ v.make if v else '—' }}</span></div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Model</div>
+              <div class="detail-colon">:</div>
+              <div class="detail-value"><span class="tax-line">{{ v.model if v else '—' }}</span></div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Year of manufacture</div>
+              <div class="detail-colon">:</div>
+              <div class="detail-value"><span class="tax-line">{{ v.year if v else '—' }}</span></div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Registration</div>
+              <div class="detail-colon">:</div>
+              <div class="detail-value"><span class="tax-line">{{ v.reg_no if v and v.reg_no else 'U/R' }}</span></div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Chassis Number</div>
+              <div class="detail-colon">:</div>
+              <div class="detail-value"><span class="tax-line">{{ v.chassis_no if v and v.chassis_no else '—' }}</span></div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Engine Number</div>
+              <div class="detail-colon">:</div>
+              <div class="detail-value"><span class="tax-line">{{ v.engine_no if v and v.engine_no else '—' }}</span></div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Price</div>
+              <div class="detail-colon">:</div>
+              <div class="detail-value"><span class="tax-line">{{ currency }} {{ "{:,.2f}".format(quotation.subtotal or 0) }}</span></div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">
+                {% if tax_rate %}VAT @ {{ "{:.2f}".format(tax_rate) }} %{% else %}VAT @ ________ %{% endif %}
+              </div>
+              <div class="detail-colon">:</div>
+              <div class="detail-value"><span class="tax-line">{{ currency }} {{ "{:,.2f}".format(quotation.tax_amount or 0) }}</span></div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Total Price</div>
+              <div class="detail-colon">:</div>
+              <div class="detail-value"><span class="tax-line">{{ currency }} {{ "{:,.2f}".format(quotation.total or 0) }}</span></div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">To be delivered</div>
+              <div class="detail-colon">:</div>
+              <div class="detail-value"><span class="tax-line">{{ quotation.customer.address if quotation.customer and quotation.customer.address else (quotation.customer.name if quotation.customer else '—') }}</span></div>
+            </div>
+          </div>
+
+          <div class="tax-invoice-signature">
+            <div class="sig-company">{{ settings.company_name if settings else 'Sonnac Lanka Enterprises' }}</div>
+            <div class="sig-line"></div>
+            <div class="sig-title">Manager</div>
+            <div class="sig-role">Manager / Partner</div>
+          </div>
+        </div>
+        {% else %}
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-start mb-4">
           <div>
@@ -114,6 +231,7 @@
           <div class="text-muted small fw-700 mb-1">NOTES / TERMS</div>
           <div class="small" style="white-space:pre-line">{{ quotation.notes }}</div>
         </div>
+        {% endif %}
         {% endif %}
       </div>
     </div>

@@ -125,6 +125,7 @@ def generate_quotation_pdf(quotation):
     s = SystemSettings.query.first()
 
     company_name = s.company_name if s else 'Sonnac Lanka Enterprises'
+    company_tagline = s.company_tagline if s and s.company_tagline else 'Importers and Dealers in Japanese Motor Vehicles'
     company_addr = s.company_address if s else 'Negombo, Sri Lanka'
     company_phone = s.company_phone if s else ''
     company_email = s.company_email if s else ''
@@ -132,6 +133,163 @@ def generate_quotation_pdf(quotation):
     logo_path = get_pdf_logo_path(s)
 
     story = []
+
+    if quotation.doc_type == 'tax_invoice':
+        meta_style = ParagraphStyle('meta', fontSize=7, textColor=colors.gray)
+        brand_name = ParagraphStyle('brand_name', fontSize=14, textColor=accent, fontName='Helvetica-Bold', leading=16)
+        brand_tagline = ParagraphStyle('brand_tagline', fontSize=8, textColor=colors.HexColor('#c0392b'), fontName='Helvetica-Bold', leading=10)
+        brand_meta = ParagraphStyle('brand_meta', fontSize=8, textColor=colors.black, leading=10)
+        label_style = ParagraphStyle('label', fontSize=8, fontName='Helvetica-Bold')
+        info_label = ParagraphStyle('info_label', fontSize=8, fontName='Helvetica-Bold', alignment=TA_RIGHT)
+        info_value = ParagraphStyle('info_value', fontSize=8, alignment=TA_LEFT)
+        title_style = ParagraphStyle('title', fontSize=10, fontName='Helvetica-Bold', alignment=TA_CENTER, spaceBefore=4, spaceAfter=6)
+        detail_label = ParagraphStyle('detail_label', fontSize=8, fontName='Helvetica-Bold')
+        detail_value = ParagraphStyle('detail_value', fontSize=8)
+        sig_title = ParagraphStyle('sig_title', fontSize=8, fontName='Helvetica-Bold', alignment=TA_RIGHT)
+        sig_role = ParagraphStyle('sig_role', fontSize=8, alignment=TA_RIGHT)
+
+        cust = quotation.customer
+        v = quotation.vehicle
+        currency = quotation.currency or (s.default_currency if s else 'LKR')
+        subtotal = quotation.subtotal or 0
+        tax_amount = quotation.tax_amount or 0
+        total = quotation.total or 0
+        tax_rate = quotation.tax_rate or 0
+
+        meta_left = quotation.created_at.strftime('%Y-%m-%d %H:%M') if quotation.created_at else ''
+        meta_center = f"{company_name} {quotation.doc_type_label.upper()} {quotation.quote_no}"
+        meta_table = Table([[Paragraph(meta_left, meta_style), Paragraph(meta_center, meta_style), Paragraph('', meta_style)]],
+                           colWidths=[50*mm, 90*mm, 40*mm])
+        meta_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+            ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        story.append(meta_table)
+        story.append(Spacer(1, 4*mm))
+
+        brand_lines = [
+            Paragraph(company_name.upper(), brand_name),
+            Paragraph(company_tagline.upper(), brand_tagline),
+            Paragraph(company_addr, brand_meta),
+        ]
+        if company_phone:
+            brand_lines.append(Paragraph(company_phone, brand_meta))
+        if company_email:
+            brand_lines.append(Paragraph(company_email, brand_meta))
+
+        brand_block = Table([[p] for p in brand_lines], colWidths=[120*mm])
+        brand_block.setStyle(TableStyle([
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ]))
+
+        if logo_path:
+            logo = Image(logo_path, width=28*mm, height=28*mm)
+            logo.hAlign = 'LEFT'
+            brand_table = Table([[logo, brand_block]], colWidths=[32*mm, 120*mm])
+            brand_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ]))
+        else:
+            brand_table = brand_block
+
+        story.append(brand_table)
+        story.append(Spacer(1, 3*mm))
+        story.append(HRFlowable(width='100%', thickness=1.2, color=colors.black))
+        story.append(Spacer(1, 4*mm))
+
+        to_rows = [
+            [Paragraph('To', label_style), Paragraph(cust.name if cust else '', detail_value)],
+            ['', Paragraph(cust.address if cust and cust.address else '', detail_value)],
+            ['', Paragraph(cust.phone if cust and cust.phone else '', detail_value)],
+        ]
+        to_table = Table(to_rows, colWidths=[12*mm, 78*mm])
+        to_table.setStyle(TableStyle([
+            ('LINEBELOW', (1, 0), (1, 0), 0.6, colors.black, None, (1, 2)),
+            ('LINEBELOW', (1, 1), (1, 1), 0.6, colors.black, None, (1, 2)),
+            ('LINEBELOW', (1, 2), (1, 2), 0.6, colors.black, None, (1, 2)),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+
+        info_rows = [
+            [Paragraph('VAT No.', info_label), Paragraph('', info_value)],
+            [Paragraph('Date', info_label), Paragraph(quotation.created_at.strftime('%Y-%m-%d') if quotation.created_at else '', info_value)],
+            [Paragraph('Invoice No.', info_label), Paragraph(quotation.quote_no, info_value)],
+        ]
+        info_table = Table(info_rows, colWidths=[28*mm, 40*mm])
+        info_table.setStyle(TableStyle([
+            ('LINEBELOW', (1, 0), (1, 0), 0.6, colors.black, None, (1, 2)),
+            ('LINEBELOW', (1, 1), (1, 1), 0.6, colors.black, None, (1, 2)),
+            ('LINEBELOW', (1, 2), (1, 2), 0.6, colors.black, None, (1, 2)),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+
+        top_table = Table([[to_table, info_table]], colWidths=[100*mm, 70*mm])
+        top_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        story.append(top_table)
+        story.append(Spacer(1, 4*mm))
+
+        story.append(Paragraph('<u>TAX INVOICE</u>', title_style))
+        story.append(Spacer(1, 2*mm))
+
+        vat_label = f"VAT @ {tax_rate:.2f} %" if tax_rate else "VAT @ ________ %"
+        details_rows = [
+            [Paragraph('Make', detail_label), Paragraph(':', detail_value), Paragraph(v.make if v else '', detail_value)],
+            [Paragraph('Model', detail_label), Paragraph(':', detail_value), Paragraph(v.model if v else '', detail_value)],
+            [Paragraph('Year of manufacture', detail_label), Paragraph(':', detail_value), Paragraph(str(v.year) if v else '', detail_value)],
+            [Paragraph('Registration', detail_label), Paragraph(':', detail_value), Paragraph(v.reg_no if v and v.reg_no else 'U/R', detail_value)],
+            [Paragraph('Chassis Number', detail_label), Paragraph(':', detail_value), Paragraph(v.chassis_no if v and v.chassis_no else '', detail_value)],
+            [Paragraph('Engine Number', detail_label), Paragraph(':', detail_value), Paragraph(v.engine_no if v and v.engine_no else '', detail_value)],
+            [Paragraph('Price', detail_label), Paragraph(':', detail_value), Paragraph(f"{currency} {subtotal:,.2f}", detail_value)],
+            [Paragraph(vat_label, detail_label), Paragraph(':', detail_value), Paragraph(f"{currency} {tax_amount:,.2f}", detail_value)],
+            [Paragraph('Total Price', detail_label), Paragraph(':', detail_value), Paragraph(f"{currency} {total:,.2f}", detail_value)],
+            [Paragraph('To be delivered', detail_label), Paragraph(':', detail_value), Paragraph(cust.address if cust and cust.address else (cust.name if cust else ''), detail_value)],
+        ]
+
+        details_table = Table(details_rows, colWidths=[28*mm, 6*mm, 72*mm])
+        details_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (1, -1), 'RIGHT'),
+            ('ALIGN', (2, 0), (2, -1), 'LEFT'),
+            ('LINEBELOW', (2, 0), (2, -1), 0.6, colors.black, None, (1, 2)),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ]))
+        details_table.hAlign = 'CENTER'
+        story.append(details_table)
+        story.append(Spacer(1, 10*mm))
+
+        sig_rows = [
+            ['', Paragraph(company_name.upper(), sig_title)],
+            ['', Paragraph('_________________________', sig_role)],
+            ['', Paragraph('Manager', sig_title)],
+            ['', Paragraph('Manager / Partner', sig_role)],
+        ]
+        sig_table = Table(sig_rows, colWidths=[100*mm, 70*mm])
+        sig_table.setStyle(TableStyle([
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        story.append(sig_table)
+
+        doc.build(story)
+        buffer.seek(0)
+        return buffer.getvalue()
 
     # Header
     company_lines = [f'<b>{company_name}</b>', company_addr]

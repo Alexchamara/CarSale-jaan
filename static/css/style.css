@@ -258,6 +258,196 @@ body.public-body {
   color: var(--lt-gold) !important;
 }
 
+/* ── Tax Invoice Preview ─────────────────────────────────────────────── */
+.tax-invoice-preview {
+  background: #ffffff;
+  color: #111111;
+  border: 1px solid #d8d8d8;
+  padding: 24px 26px;
+  font-family: "Spectral", "Georgia", serif;
+}
+
+.tax-invoice-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: #555555;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.tax-invoice-brand {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.tax-invoice-logo img {
+  width: 86px;
+  height: 86px;
+  object-fit: contain;
+}
+
+.tax-invoice-brand-text {
+  line-height: 1.2;
+}
+
+.tax-invoice-brand-text .brand-name {
+  font-size: 1.28rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #1a3a5c;
+}
+
+.tax-invoice-brand-text .brand-tagline {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #c0392b;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-top: 2px;
+}
+
+.tax-invoice-brand-text .brand-address,
+.tax-invoice-brand-text .brand-contact {
+  font-size: 0.72rem;
+  color: #222222;
+}
+
+.tax-invoice-divider {
+  border-top: 2px solid #111111;
+  margin: 10px 0 12px;
+}
+
+.tax-invoice-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.tax-invoice-to {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 10px;
+  font-size: 0.78rem;
+}
+
+.tax-invoice-to .to-label {
+  font-weight: 700;
+}
+
+.tax-invoice-to .to-lines .tax-line {
+  margin-bottom: 6px;
+}
+
+.tax-invoice-info {
+  width: 240px;
+  font-size: 0.76rem;
+}
+
+.tax-invoice-info .info-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.tax-invoice-info .info-label {
+  min-width: 70px;
+  font-weight: 600;
+}
+
+.tax-line {
+  display: block;
+  border-bottom: 1px dotted #333333;
+  min-height: 1rem;
+  padding-bottom: 2px;
+  flex: 1;
+}
+
+.tax-invoice-title {
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 6px 0 12px;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.tax-invoice-details {
+  display: grid;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.tax-invoice-details .detail-row {
+  display: grid;
+  grid-template-columns: 170px 12px 1fr;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.tax-invoice-details .detail-label {
+  font-weight: 600;
+}
+
+.tax-invoice-signature {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-top: 18px;
+  font-size: 0.78rem;
+}
+
+.tax-invoice-signature .sig-company {
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #1a3a5c;
+}
+
+.tax-invoice-signature .sig-line {
+  width: 180px;
+  border-bottom: 1px dotted #333333;
+  margin: 10px 0 4px;
+}
+
+.tax-invoice-signature .sig-title {
+  font-weight: 700;
+}
+
+@media (max-width: 992px) {
+  .tax-invoice-top {
+    flex-direction: column;
+  }
+
+  .tax-invoice-info {
+    width: 100%;
+  }
+
+  .tax-invoice-details .detail-row {
+    grid-template-columns: 140px 10px 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  .tax-invoice-preview {
+    padding: 16px;
+  }
+
+  .tax-invoice-brand {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tax-invoice-details .detail-row {
+    grid-template-columns: 120px 8px 1fr;
+  }
+}
+
 /* CTA Button styles */
 .btn-cta-primary {
   background: var(--lt-gold) !important;
