@@ -51,7 +51,6 @@
         {% set logo_src = url_for('static', filename='uploads/logos/' + settings.logo) if settings and settings.logo else url_for('static', filename='logo.png') %}
         {% set currency = quotation.currency or (settings.currency if settings else 'LKR') %}
         {% set v = quotation.vehicle %}
-        {% set tax_rate = quotation.tax_rate or 0 %}
         <div class="tax-invoice-preview">
           <div class="tax-invoice-meta">
             <div>{{ quotation.quote_no }}</div>
@@ -74,15 +73,7 @@
 
           <div class="tax-invoice-divider"></div>
 
-          <div class="tax-invoice-top">
-            <div class="tax-invoice-to">
-              <div class="to-label">To</div>
-              <div class="to-lines">
-                <div class="tax-line">{{ quotation.customer.name if quotation.customer else '—' }}</div>
-                <div class="tax-line">{{ quotation.customer.address if quotation.customer and quotation.customer.address else '' }}</div>
-                <div class="tax-line">{{ quotation.customer.phone if quotation.customer and quotation.customer.phone else '' }}</div>
-              </div>
-            </div>
+          <div class="tax-invoice-info-row">
             <div class="tax-invoice-info">
               <div class="info-row">
                 <div class="info-label">VAT No.</div>
@@ -101,6 +92,15 @@
 
           <div class="tax-invoice-title">TAX INVOICE</div>
 
+          <div class="tax-invoice-to">
+            <div class="to-label">To</div>
+            <div class="to-lines">
+              <div class="tax-line">{{ quotation.customer.name if quotation.customer else '—' }}</div>
+              <div class="tax-line">{{ quotation.customer.address if quotation.customer and quotation.customer.address else '' }}</div>
+              <div class="tax-line">{{ quotation.customer.phone if quotation.customer and quotation.customer.phone else '' }}</div>
+            </div>
+          </div>
+
           <div class="tax-invoice-details">
             <div class="detail-row">
               <div class="detail-label">Make</div>
@@ -113,9 +113,19 @@
               <div class="detail-value"><span class="tax-line">{{ v.model if v else '—' }}</span></div>
             </div>
             <div class="detail-row">
+              <div class="detail-label">Colour</div>
+              <div class="detail-colon">:</div>
+              <div class="detail-value"><span class="tax-line">{{ v.color if v and v.color else '—' }}</span></div>
+            </div>
+            <div class="detail-row">
               <div class="detail-label">Year of manufacture</div>
               <div class="detail-colon">:</div>
               <div class="detail-value"><span class="tax-line">{{ v.year if v else '—' }}</span></div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Fuel Type</div>
+              <div class="detail-colon">:</div>
+              <div class="detail-value"><span class="tax-line">{{ v.fuel_type if v and v.fuel_type else '—' }}</span></div>
             </div>
             <div class="detail-row">
               <div class="detail-label">Registration</div>
@@ -133,19 +143,12 @@
               <div class="detail-value"><span class="tax-line">{{ v.engine_no if v and v.engine_no else '—' }}</span></div>
             </div>
             <div class="detail-row">
-              <div class="detail-label">Price</div>
+              <div class="detail-label">Faculty Amount</div>
               <div class="detail-colon">:</div>
               <div class="detail-value"><span class="tax-line">{{ currency }} {{ "{:,.2f}".format(quotation.subtotal or 0) }}</span></div>
             </div>
             <div class="detail-row">
-              <div class="detail-label">
-                {% if tax_rate %}VAT @ {{ "{:.2f}".format(tax_rate) }} %{% else %}VAT @ ________ %{% endif %}
-              </div>
-              <div class="detail-colon">:</div>
-              <div class="detail-value"><span class="tax-line">{{ currency }} {{ "{:,.2f}".format(quotation.tax_amount or 0) }}</span></div>
-            </div>
-            <div class="detail-row">
-              <div class="detail-label">Total Price</div>
+              <div class="detail-label">Selling Price</div>
               <div class="detail-colon">:</div>
               <div class="detail-value"><span class="tax-line">{{ currency }} {{ "{:,.2f}".format(quotation.total or 0) }}</span></div>
             </div>
@@ -157,7 +160,6 @@
           </div>
 
           <div class="tax-invoice-signature">
-            <div class="sig-company">{{ settings.company_name if settings else 'Sonnac Lanka Enterprises' }}</div>
             <div class="sig-line"></div>
             <div class="sig-title">Manager</div>
             <div class="sig-role">Manager / Partner</div>

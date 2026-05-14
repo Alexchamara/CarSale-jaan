@@ -321,10 +321,9 @@ body.public-body {
   margin: 10px 0 12px;
 }
 
-.tax-invoice-top {
+.tax-invoice-info-row {
   display: flex;
-  justify-content: space-between;
-  gap: 24px;
+  justify-content: flex-end;
 }
 
 .tax-invoice-to {
@@ -332,6 +331,7 @@ body.public-body {
   grid-template-columns: 32px 1fr;
   gap: 10px;
   font-size: 0.78rem;
+  margin: 6px 0 14px;
 }
 
 .tax-invoice-to .to-label {
@@ -420,8 +420,8 @@ body.public-body {
 }
 
 @media (max-width: 992px) {
-  .tax-invoice-top {
-    flex-direction: column;
+  .tax-invoice-info-row {
+    justify-content: flex-start;
   }
 
   .tax-invoice-info {
