@@ -152,9 +152,7 @@ def generate_quotation_pdf(quotation):
         v = quotation.vehicle
         currency = quotation.currency or (s.default_currency if s else 'LKR')
         subtotal = quotation.subtotal or 0
-        tax_amount = quotation.tax_amount or 0
         total = quotation.total or 0
-        tax_rate = quotation.tax_rate or 0
 
         meta_left = quotation.created_at.strftime('%Y-%m-%d %H:%M') if quotation.created_at else ''
         meta_center = f"{company_name} {quotation.doc_type_label.upper()} {quotation.quote_no}"
@@ -210,7 +208,7 @@ def generate_quotation_pdf(quotation):
             ['', Paragraph(cust.address if cust and cust.address else '', detail_value)],
             ['', Paragraph(cust.phone if cust and cust.phone else '', detail_value)],
         ]
-        to_table = Table(to_rows, colWidths=[12*mm, 78*mm])
+        to_table = Table(to_rows, colWidths=[12*mm, 64*mm])
         to_table.setStyle(TableStyle([
             ('LINEBELOW', (1, 0), (1, 0), 0.6, colors.black, None, (1, 2)),
             ('LINEBELOW', (1, 1), (1, 1), 0.6, colors.black, None, (1, 2)),
@@ -233,29 +231,28 @@ def generate_quotation_pdf(quotation):
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
         ]))
 
-        top_table = Table([[to_table, info_table]], colWidths=[100*mm, 70*mm])
-        top_table.setStyle(TableStyle([
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        story.append(top_table)
-        story.append(Spacer(1, 4*mm))
+        info_table.hAlign = 'RIGHT'
+        story.append(info_table)
+        story.append(Spacer(1, 3*mm))
 
         story.append(Paragraph('<u>TAX INVOICE</u>', title_style))
         story.append(Spacer(1, 2*mm))
 
-        vat_label = f"VAT @ {tax_rate:.2f} %" if tax_rate else "VAT @ ________ %"
+        to_table.hAlign = 'LEFT'
+        story.append(to_table)
+        story.append(Spacer(1, 4*mm))
+
         details_rows = [
             [Paragraph('Make', detail_label), Paragraph(':', detail_value), Paragraph(v.make if v else '', detail_value)],
             [Paragraph('Model', detail_label), Paragraph(':', detail_value), Paragraph(v.model if v else '', detail_value)],
+            [Paragraph('Colour', detail_label), Paragraph(':', detail_value), Paragraph(v.color if v and v.color else '', detail_value)],
             [Paragraph('Year of manufacture', detail_label), Paragraph(':', detail_value), Paragraph(str(v.year) if v else '', detail_value)],
+            [Paragraph('Fuel Type', detail_label), Paragraph(':', detail_value), Paragraph(v.fuel_type if v and v.fuel_type else '', detail_value)],
             [Paragraph('Registration', detail_label), Paragraph(':', detail_value), Paragraph(v.reg_no if v and v.reg_no else 'U/R', detail_value)],
             [Paragraph('Chassis Number', detail_label), Paragraph(':', detail_value), Paragraph(v.chassis_no if v and v.chassis_no else '', detail_value)],
             [Paragraph('Engine Number', detail_label), Paragraph(':', detail_value), Paragraph(v.engine_no if v and v.engine_no else '', detail_value)],
-            [Paragraph('Price', detail_label), Paragraph(':', detail_value), Paragraph(f"{currency} {subtotal:,.2f}", detail_value)],
-            [Paragraph(vat_label, detail_label), Paragraph(':', detail_value), Paragraph(f"{currency} {tax_amount:,.2f}", detail_value)],
-            [Paragraph('Total Price', detail_label), Paragraph(':', detail_value), Paragraph(f"{currency} {total:,.2f}", detail_value)],
+            [Paragraph('Faculty Amount', detail_label), Paragraph(':', detail_value), Paragraph(f"{currency} {subtotal:,.2f}", detail_value)],
+            [Paragraph('Selling Price', detail_label), Paragraph(':', detail_value), Paragraph(f"{currency} {total:,.2f}", detail_value)],
             [Paragraph('To be delivered', detail_label), Paragraph(':', detail_value), Paragraph(cust.address if cust and cust.address else (cust.name if cust else ''), detail_value)],
         ]
 
@@ -271,10 +268,9 @@ def generate_quotation_pdf(quotation):
         ]))
         details_table.hAlign = 'CENTER'
         story.append(details_table)
-        story.append(Spacer(1, 10*mm))
+        story.append(Spacer(1, 15*mm))
 
         sig_rows = [
-            ['', Paragraph(company_name.upper(), sig_title)],
             ['', Paragraph('_________________________', sig_role)],
             ['', Paragraph('Manager', sig_title)],
             ['', Paragraph('Manager / Partner', sig_role)],
