@@ -281,16 +281,21 @@ body.public-body {
   gap: 16px;
   align-items: center;
   margin-top: 8px;
+  justify-content: center;
+  text-align: center;
+  flex-direction: row;
 }
 
 .tax-invoice-logo img {
   width: 86px;
   height: 86px;
   object-fit: contain;
+  margin-bottom: 0;
 }
 
 .tax-invoice-brand-text {
   line-height: 1.2;
+  text-align: center;
 }
 
 .tax-invoice-brand-text .brand-name {

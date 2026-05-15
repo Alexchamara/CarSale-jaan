@@ -24,19 +24,19 @@
                 <img src="{{ url_for('static', filename='uploads/logos/' + settings.logo) }}" height="50" class="border rounded p-1">
               </div>
               {% endif %}
-              <input type="file" class="form-control form-control-sm" name="logo" accept="image/*">
+              <input type="file" class="form-control form-control-sm" name="company_logo" accept="image/*">
             </div>
             <div class="col-12">
               <label class="form-label">Address</label>
-              <textarea class="form-control" name="address" rows="2">{{ settings.address if settings else '' }}</textarea>
+              <textarea class="form-control" name="company_address" rows="2">{{ settings.address if settings else '' }}</textarea>
             </div>
             <div class="col-md-6">
               <label class="form-label">Phone</label>
-              <input type="text" class="form-control" name="phone" value="{{ settings.phone if settings else '' }}">
+              <input type="text" class="form-control" name="company_phone" value="{{ settings.phone if settings else '' }}">
             </div>
             <div class="col-md-6">
               <label class="form-label">Email</label>
-              <input type="email" class="form-control" name="email" value="{{ settings.email if settings else '' }}">
+              <input type="email" class="form-control" name="company_email" value="{{ settings.email if settings else '' }}">
             </div>
             <div class="col-md-6">
               <label class="form-label">WhatsApp Number</label>
@@ -44,7 +44,7 @@
             </div>
             <div class="col-md-6">
               <label class="form-label">Currency</label>
-              <select class="form-select" name="currency">
+              <select class="form-select" name="default_currency">
                 {% for c in ['LKR','USD','EUR','GBP','JPY','AED'] %}
                 <option value="{{ c }}" {% if settings and settings.currency == c %}selected{% endif %}>{{ c }}</option>
                 {% endfor %}
