@@ -136,9 +136,9 @@ def generate_quotation_pdf(quotation):
 
     if quotation.doc_type == 'tax_invoice':
         meta_style = ParagraphStyle('meta', fontSize=7, textColor=colors.gray)
-        brand_name = ParagraphStyle('brand_name', fontSize=14, textColor=accent, fontName='Helvetica-Bold', leading=16)
-        brand_tagline = ParagraphStyle('brand_tagline', fontSize=8, textColor=colors.HexColor('#c0392b'), fontName='Helvetica-Bold', leading=10)
-        brand_meta = ParagraphStyle('brand_meta', fontSize=8, textColor=colors.black, leading=10)
+        brand_name = ParagraphStyle('brand_name', fontSize=14, textColor=accent, fontName='Helvetica-Bold', leading=16, alignment=TA_CENTER)
+        brand_tagline = ParagraphStyle('brand_tagline', fontSize=8, textColor=colors.HexColor('#c0392b'), fontName='Helvetica-Bold', leading=10, alignment=TA_CENTER)
+        brand_meta = ParagraphStyle('brand_meta', fontSize=8, textColor=colors.black, leading=10, alignment=TA_CENTER)
         label_style = ParagraphStyle('label', fontSize=8, fontName='Helvetica-Bold')
         info_label = ParagraphStyle('info_label', fontSize=8, fontName='Helvetica-Bold', alignment=TA_RIGHT)
         info_value = ParagraphStyle('info_value', fontSize=8, alignment=TA_LEFT)
@@ -178,23 +178,26 @@ def generate_quotation_pdf(quotation):
         if company_email:
             brand_lines.append(Paragraph(company_email, brand_meta))
 
-        brand_block = Table([[p] for p in brand_lines], colWidths=[120*mm])
+        brand_block = Table([[p] for p in brand_lines], colWidths=[110*mm])
         brand_block.setStyle(TableStyle([
             ('LEFTPADDING', (0, 0), (-1, -1), 0),
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
             ('TOPPADDING', (0, 0), (-1, -1), 0),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
         ]))
+        brand_block.hAlign = 'CENTER'
 
         if logo_path:
             logo = Image(logo_path, width=28*mm, height=28*mm)
-            logo.hAlign = 'LEFT'
-            brand_table = Table([[logo, brand_block]], colWidths=[32*mm, 120*mm])
+            logo.hAlign = 'CENTER'
+            brand_table = Table([[logo, brand_block]], colWidths=[32*mm, 110*mm])
             brand_table.setStyle(TableStyle([
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('ALIGN', (0, 0), (0, 0), 'CENTER'),
                 ('LEFTPADDING', (0, 0), (-1, -1), 0),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 0),
             ]))
+            brand_table.hAlign = 'CENTER'
         else:
             brand_table = brand_block
 
@@ -268,7 +271,7 @@ def generate_quotation_pdf(quotation):
         ]))
         details_table.hAlign = 'CENTER'
         story.append(details_table)
-        story.append(Spacer(1, 15*mm))
+        story.append(Spacer(1, 24*mm))
 
         sig_rows = [
             ['', Paragraph('_________________________', sig_role)],
